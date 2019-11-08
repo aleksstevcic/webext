@@ -1,0 +1,97 @@
+<html>
+	<head>
+		<style>
+			.box{
+				width: 100%;
+				height: 100%
+			}
+			
+			span{
+				height: 100%;
+			}
+			
+			.box *{
+				display: inline-block;
+			}
+			
+			.box .left, .box .right{
+				width: 50%;
+			}
+			
+			.box .left .resizer{
+				float: right;
+				background-color: red;
+				width: 10px;
+				cursor: default;
+			}
+			
+			.box .left .resizer:hover{
+				cursor: col-resize;
+			}
+			
+			.box .left{
+				background-color: grey;
+			}
+			
+			.box .right{
+				background-color: yellow;
+			}
+		</style>
+		<script>
+			let resizer;
+			let left;
+			let right;
+			//mouse down var
+			let md;
+			
+			//on document loaded
+			document.addEventListener("DOMContentLoaded", event =>{
+				
+				//get the three DOMs
+				resizer = document.querySelector(".resizer");
+				left = document.querySelector(".left");
+				right = document.querySelector(".right");
+				
+				//add an event listener on when you click down on the element
+				resizer.addEventListener("mousedown", e =>{
+					//check the current value of md:
+					//IF TRUE (already on), do nothing
+					//IF FALSE, set to true (turn on)
+					md ? null : md = true;
+				});
+				
+				//events now running on the window now since it is less glitchy
+				//when you let go of the mouse
+				window.addEventListener("mouseup", e =>{
+					//check the current value of md:
+					//IF TRUE(on), set to false (off)
+					//ELSE do nothing
+					md ? md = false : null;
+				});
+				
+				//when the mouse moves
+				window.addEventListener("mousemove", m =>{
+						//IF you have activated the mouse by clicking down
+						if(md){
+							//get the mouse position
+							let posx = m.clientX + 5;
+							//get it as a percentage of screen width
+							let leftpercent = (posx * 100) / window.screen.width;
+							
+							//set the right span to the remainder of the %
+							let rightpercent = 100-leftpercent;
+							
+							//set the two styles
+							left.style.width = leftpercent + "%";
+							right.style.width = rightpercent + "%";
+						}
+						
+					});
+			});
+		</script>
+	</head>
+	<body>
+		<div class="box"><span class="left"><span class="resizer"></span></span><span class="right"></span></div>
+	</body>
+	
+</html>
