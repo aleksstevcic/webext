@@ -14,6 +14,22 @@ Chrome has JQuery, as I built the chrome extension first and felt comfortable wi
 
 ---
 
+# Getting Started
+
+This extension is built for use in both Chrome and Firefox. 
+
+⭐️ [Here's a link to its Chrome extension](https://chrome.google.com/webstore/detail/dgg-injector/dinhjiedidnaoglplfcmilcakpdabdpm) 
+
+⭐️ [Here's a link to its Firefox extension](https://addons.mozilla.org/en-US/firefox/addon/dgg-injector/) 
+
+1. Download the extension via the above link(s)
+2. Go to your preferred Twitch channel
+3. Click the extension's icon in the top right
+
+You should be good to go!
+
+---
+
 # TODO
 
 Please message [Fythic](https://www.reddit.com/message/compose/?to=Fythic) or ask their GitHub account [aleksstevcic](https://github.com/aleksstevcic) if you would like to contribute! Or just go ahead, really ☀️
