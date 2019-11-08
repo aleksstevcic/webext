@@ -1,0 +1,29 @@
+{
+
+  "manifest_version": 2,
+  "name": "DGG Injector",
+  "version": "0.1",
+
+  "icons": {
+    "128": "icon.png"
+  },
+  "description": "NOTE: must be reactivated each time and old twitch chat will fail to load until you refresh the page. PepeLaugh, my friends.",
+
+  "browser_action": {
+	"default_icon": {
+		"128": "icon.png"
+	}
+  },
+  
+  "content_scripts": [
+    {
+      "matches": ["*://*.twitch.tv/*"],
+      "js": ["main.js"]
+    }
+  ],
+  
+  "background": {
+	"scripts": ["background.js"]
+  }
+
+}
