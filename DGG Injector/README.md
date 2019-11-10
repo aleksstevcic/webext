@@ -1,10 +1,10 @@
-# DGG Injector
+﻿# DGG Injector
 
 DGG Injector is a Chrome and Firefox extension which allows the user to swap out any Twitch chat for [Destiny.gg's](https://www.destiny.gg/bigscreen) embedded chat (destiny.gg/embed/chat). 
 
 [Destiny](https://www.twitch.tv/destiny) the streamer defers to his own website's chat rather than Twitch's. Because of good moderation, high engagement by Destiny and those in his sphere, and Destiny.gg's overlay in the streams themselves, it is by far the preferred chat with which to engage. 
 
-aleksstevcic built the Chrome extension first as they felt comfortable with JQuery, but ran into firefox's guidelines that block it, so Firefox's is a better version of the app.
+Chrome extension NO LONGER uses jQuery. Expecting (negligible) performance gains.
 
 ---
 
@@ -40,10 +40,14 @@ Please message [Fythic](https://www.reddit.com/message/compose/?to=Fythic) or as
 Items currently on the To Do list for this project:
 
 * An option to swap between different Twitch chats
-* Save-able configuration settings on a per-channel basis
+* DONE: Save-able configuration settings on a per-channel basis - DGG chat will now automatically turn on for channels that you have it left on for, without needing to click it every time you load the channel
+* A webpage to be able to view, add, or remove items from your whitelist of channels
+* Save extra information, such as the preferred width of the chat on a per-channel basis
 
 ### TODO Road Blocks
-Saving configuration settings on a per-channel basis seems to be tricky as Twitch seems to have security risks when loading an iframe from a different domain, and will refuse to load normal chat after the iframe is loaded. I'm guessing a good workaround is to embed both twitch chat and dgg chat in iframes, then those in another iframe, and see if that may bypass the networking issue, but I have no idea.
+Loading an iframe from a different domain will refuse to load normal chat after the iframe is loaded. I'm guessing a good workaround is to embed both twitch chat and dgg chat in iframes, then those in another iframe, and see if that may bypass the networking issue, but I have no idea.
+
+*The current extension destroys a bunch of twitch navigation features until you refresh the page. (Debugging seems to be that FrankerFaceZ extension breaks. I am not sure how to fix or anything.)
 
 ---
 
