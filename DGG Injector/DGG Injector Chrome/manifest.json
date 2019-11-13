@@ -24,6 +24,7 @@
 	},
 
 	"web_accessible_resources": [
-		"styles.css"
+		"styles.css",
+		"swapicon.png"
 	]
 }

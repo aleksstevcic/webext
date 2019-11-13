@@ -1,4 +1,5 @@
 let whitelist = [];
+const DEFAULT_WIDTH = "300px";
 
 //this interval gets the current whitelist and saves it locally
 let datagetter = setInterval(() => {
@@ -6,8 +7,11 @@ let datagetter = setInterval(() => {
 
 	if(head.isTwitch){
 		chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-			whitelist = data["--dgg--Whitelist"];
+			if(typeof data["--dgg--Whitelist"] != "undefined") whitelist = data["--dgg--Whitelist"];
+			chrome.runtime.sendMessage({message: "--dgg--sendData", enabled: isEnabled()}, () => {});
+			console.log(data);
 		});
+
 
 		clearInterval(datagetter);
 		datagetter = undefined;
@@ -20,10 +24,23 @@ let autoplacement = setInterval(() => {
 	let dggExists = findDGG();
 	if(!dggExists){
 		let head = getTwitch();
-		if(whitelist.includes(head.channel)){
-			console.log('fouind');
-			addDGG();
-			addResizerEvent();
+		let found = false;
+		let width = DEFAULT_WIDTH;
+		let enable = false;
+		for(let i=0; i<whitelist.length; i++){
+			if(head.channel === whitelist[i].channel) {
+				found=true;
+				width = whitelist[i].width;
+				enable = whitelist[i].enabled;
+				break;
+			}
+		}
+		if(found){
+			addDGG(width);
+			addEvents();
+			//if it is enabled, show dgg, otherwise default to twitch
+			if(enable) toggleDGG("dgg");
+			else toggleDGG("twitch");
 			//runResizerAnimation();
 		}
 	}
@@ -41,64 +58,98 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				let head = getTwitch();
 				let dgg = findDGG();
 
-				//make a temp version of the list
-				let temp = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
+				//set our global whitelist
+				whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
 
-				//if the current channel is not in the whitelist, then add it
-				if(!temp.includes(head.channel))
-					temp.push(head.channel);
-				else{
-					//otherwise remove it from the array
-					removeFromArray(head.channel, temp);
-					if(dgg)
-						removeDGG();
+				let obj = {
+					channel: head.channel,
+					width: dgg ? dgg.style.width : DEFAULT_WIDTH,
+					enabled: null
+				};
+
+				let found = false;
+				//go through the whitelist
+				for(let i=0; i<whitelist.length; i++){
+					//if we find a match
+					if(head.channel === whitelist[i].channel) {
+							whitelist.splice(i, 1);
+							found = true;
+							chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+							break;
+					}
+				}
+
+				//if we end up not finding anything, then immediately add it to the list
+				if(!found){
+					obj.enabled = true;
+					whitelist.push(obj);
 				}
 
 				//set the local whitelist var to the new edited list, and set the profile storage
-				chrome.storage.sync.set({"--dgg--Whitelist": temp}, () => {
-					whitelist = temp;
+				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+					chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
 				});
 				
 			});
 		}
 });
 
-function removeFromArray(val, arr){
-	let index = arr.indexOf(val);
-	if(index > -1)
-		arr.splice(index, 1);
+function isEnabled(){
+	let head = getTwitch();
+
+	for(let i=0; i< whitelist.length; i++){
+		if(head.channel === whitelist[i].channel)
+			return true;
+	}
+	return false;
 }
 
-function toggleDGG(val){
-	let dgg = findDGG();
-	let chat = findChat();
-	
-	if(dgg){
-		if(dgg.getAttribute("visible") === "true"){
-			dgg.setAttribute("style", "display: none");
-			dgg.setAttribute("visible", "false");
-			
-			chat.setAttribute("style", "display: block");
-		}else{
-			dgg.setAttribute("style", "display: block");
+function toggleDGG(which){
+	let swaptype = which ? which : null; 
+	let dgg = findDGGIFrame();
+	let chat = findChatIFrame();
+
+	if(swaptype != null){
+		if(swaptype == "dgg"){
+			dgg.style.display = "block";
+			chat.style.display = "none";
 			dgg.setAttribute("visible", "true");
-			
-			chat.setAttribute("style", "display: none");
+			return "dgg";
+		}
+		else if(swaptype == "twitch"){
+			dgg.style.display = "none";
+			chat.style.display = "block";
+			dgg.setAttribute("visible", "false");
+			return "twitch";
+		}
+	}
+	else{
+		if(dgg.getAttribute("visible") === "true"){
+			dgg.style.display = "none";
+			chat.style.display = "block";
+			dgg.setAttribute("visible", "false");
+			return "twitch";
+		}else{
+			dgg.style.display = "block";
+			chat.style.display = "none";
+			dgg.setAttribute("visible", "true");
+			return "dgg";
 		}
 	}
 }
 
-function addDGG(){
+function addDGG(width){
 	let dom = findChat();
 	if(dom){
-		let dgg = "<div class='dggPepeLaugh' visible='true' style='display:block; height: 100% !important; width: 300px;'><iframe src='https://www.destiny.gg/embed/chat' style='height: 100% !important; width: 100% !important;'></iframe></div>";
-		
+		let dgg = "<div class='dggPepeLaugh' visible='true' style='display:block; height: 100% !important; width: "+width+";'><iframe class = 'boringChat' src='https://www.twitch.tv/popout/k4iley/chat' style = 'height: 100% !important; width: 100% !important; display: none;'></iframe><iframe class = 'funChat' src='https://www.destiny.gg/embed/chat' style='height: 100% !important; width: 100% !important; display: block;'></iframe></div>";
 
-		let resizer = "<span class='dggResizer' md='false'></span>";
+		let resizer = "<span class='dggResizer' md='false' hover='false' style='opacity:0'></span>";
+
+		let swapper = "<span class='dggSwapper'><img src='" + chrome.runtime.getURL("swapicon.png") + "' width='50' height='50'></img></span>";
 
 		dom.setAttribute("style", "display: none !important");
 
-		dom.parentNode.innerHTML += resizer + dgg;
+		dom.parentNode.innerHTML += resizer + swapper + dgg;
 		//add the event handler DOM (takes up whole screen)
 	}
 }
@@ -118,6 +169,14 @@ function findDGG(){
 	return document.querySelector(".dggPepeLaugh");
 }
 
+function findChatIFrame(){
+	return document.querySelector(".boringChat");
+}
+
+function findDGGIFrame(){
+	return document.querySelector(".funChat");
+}
+
 function findChat(){
 	return document.querySelector("div[data-a-target^='right-column-chat-bar']");
 }
@@ -126,30 +185,112 @@ function findResizer(){
 	return document.querySelector(".dggResizer");
 }
 
+function findSwapper(){
+	return document.querySelector(".dggSwapper");
+}
+
 function getTwitch(){
 	let isTwitch = document.querySelector("meta[property^='og:site_name']") ? (document.querySelector("meta[property^='og:site_name']").getAttribute("content") == "Twitch") : null;
-	let channelName = document.querySelector("meta[property^='og:url']") ? document.querySelector("meta[property^='og:url']").getAttribute("content").split("twitch.tv/")[1] : null;
+	let channelName = null;
+	if(document.querySelector("meta[property^='og:url']")){
+		let htmlname = document.querySelector("meta[property^='og:url']").getAttribute("content").split("twitch.tv/")[1];
+		let href = window.location.href;
+
+		if(href.indexOf(htmlname) > -1)
+			channelName = htmlname;
+		else //janky. can be exploited
+			channelName = href.split("twitch.tv/")[1];
+	}
 	return obj = {
 		isTwitch: (isTwitch) ? true : false,
 		channel: (channelName) ? channelName: null
 	};
 }
 
-function addResizerEvent(){
+function addEvents(){
 	let resizer = findResizer();
-
+	let dgg = findDGG().childNodes[0].contentDocument ? findDGG().childNodes[0].contentDocument : findDGG().childNodes[0].contentWindow.document;
+	let swapper = findSwapper();
 	//if the resizer div exists
 	if(resizer){
 		//on mouse down, change the DOM's property of "md" (mousedown) to true
 		resizer.addEventListener("mousedown", e => {
 			(resizer.getAttribute("md") === "true") ? null : resizer.setAttribute("md", "true");
 		});
+
+		//COSMETIC HOVER EVENTS (does nothing rn im too smoothbrain to figure it out)
+		resizer.addEventListener("mouseenter", e => {
+			resizer.setAttribute("hover", "true");
+		});
+		resizer.addEventListener("mouseleave", e => {
+			resizer.setAttribute("hover", "false");
+		});
+
+		//button to swap DGG and normal chat
+		swapper.addEventListener("click", () => {
+			let enable = toggleDGG() === "dgg" ? true : false;
+
+			let head = getTwitch();
+
+			let found = false;
+			for(let i=0; i<whitelist.length; i++){
+				if(head.channel == whitelist[i].channel){
+					found = true;
+					whitelist[i].enabled = enable;
+					break;
+				}
+			}
+
+			if(found)
+				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
+
+		});
+		swapper.addEventListener("mouseenter", () => {
+			swapper.style.cursor = "pointer";
+		});
+		swapper.addEventListener("mouseleave", () => {
+			swapper.style.cursor = "default";
+		});
+
 		//apply an event on the whole document to turn it off on mouseup
 		document.body.addEventListener("mouseup", e => {
 			(resizer.getAttribute("md") === "true") ? resizer.setAttribute("md", "false") : null;
+
+			let channel = getTwitch().channel;
+
+			let width = findDGG().style.width;
+
+			let found = false;
+
+			for(let i=0; i<whitelist.length; i++){
+				if(obj.channel == whitelist[i].channel){
+					whitelist[i].width = width;
+					found = true;
+					break;
+				}
+			}
+
+			if(!found)
+				whitelist.push(obj);
+
+			chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
 		});
 		//when the mouse moves along the page, get the mouse position and change the width according to the the distance from the right side of the screen
 		document.body.addEventListener("mousemove", e => {
+			if(resizer.getAttribute("md") === "true"){
+				let dgg = findDGG();
+				let posx = e.clientX;
+				let val = window.screen.width - posx;
+
+				dgg.style.width = val + "px";
+			}
+		});
+
+		dgg.body.addEventListener("mouseup", e => {
+			(resizer.getAttribute("md") === "true") ? resizer.setAttribute("md", "false") : null;
+		});
+		//when the mouse moves along the page, get the mouse position and change the width according to the the distance from the right side of the screen
+		dgg.body.addEventListener("mousemove", e => {
 			if(resizer.getAttribute("md") === "true"){
 				let dgg = findDGG();
 				let posx = e.clientX;
@@ -187,4 +328,9 @@ function runResizerAnimation(){
 		}
 
 	}, 33);
+}
+
+function lerp(start, end, percent){
+	console.log(start + " " + end + " " + percent + " " + start + ((end-start)*percent));
+	return start + ((end-start)*percent);
 }

@@ -20,8 +20,21 @@
 	animation-timing-function: ease;
 }
 
+.dggSwapper{
+	width: 50px;
+	height: 50px;
+	position: absolute;
+	background-color:rgba(130,140,170,0.4);
+	border-radius: 5px;
+}
+.dggSwapper img{
+	opacity: 1 !important;
+}
+
 
 /*KEYRFRAMES FIREFOX/IE*/
+
+
 @keyframes dggResizemouseenter{
 	 from{
 	 	opacity: 0;
@@ -40,7 +53,9 @@
 	 }
 }
 
+
 /* KEYFRAMES CHROME/SAFARI/OPERA*/
+
 
 @-webkit-keyframes dggResizemouseenter{
 	 from{
