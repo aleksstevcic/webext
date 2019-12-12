@@ -1,4 +1,5 @@
 let whitelist = [];
+let currChannel = "";
 const DEFAULT_WIDTH = "300px";
 
 //this interval gets the current whitelist and saves it locally
@@ -7,9 +8,12 @@ let datagetter = setInterval(() => {
 
 	if(head.isTwitch){
 		chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-			if(typeof data["--dgg--Whitelist"] != "undefined") whitelist = data["--dgg--Whitelist"];
+			if(typeof data["--dgg--Whitelist"] != "undefined"){
+				whitelist = data["--dgg--Whitelist"];
+				//REGULATORY CHECK
+				trimName(whitelist, "isTwitch");
+			}
 			chrome.runtime.sendMessage({message: "--dgg--sendData", enabled: isEnabled()}, () => {});
-			console.log(data);
 		});
 
 
@@ -20,10 +24,18 @@ let datagetter = setInterval(() => {
 
 //this runs parallel every 500 milliseconds
 //will slam in dgg for you if you have it toggled on for this specified channel
-let autoplacement = setInterval(() => {
+let cont_evt = setInterval(() => {
 	let dggExists = findDGG();
+	let head = getTwitch();
+
+	if(currChannel != head.channel){
+		if(dggExists)
+			updateIFrames(head.channel);
+
+		currChannel = head.channel;
+	}
+
 	if(!dggExists){
-		let head = getTwitch();
 		let found = false;
 		let width = DEFAULT_WIDTH;
 		let enable = false;
@@ -52,47 +64,83 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		//event will trigger when you click the extension icon
 		if(request.message === "--dgg--toggle"){
 			
-			//get the whitelist as stored on the profile
-			chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-				
-				let head = getTwitch();
-				let dgg = findDGG();
+			let dgg = findDGG();
+			let head = getTwitch();
+			if(!dgg){
+				//get the whitelist as stored on the profile
+				chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
+					
+					let head = getTwitch();
+					let dgg = findDGG();
 
-				//set our global whitelist
-				whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
+					//set our global whitelist
+					whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
 
-				let obj = {
-					channel: head.channel,
-					width: dgg ? dgg.style.width : DEFAULT_WIDTH,
-					enabled: null
-				};
+					let obj = {
+						channel: head.channel,
+						width: dgg ? dgg.style.width : DEFAULT_WIDTH,
+						enabled: null
+					};
 
-				let found = false;
-				//go through the whitelist
-				for(let i=0; i<whitelist.length; i++){
-					//if we find a match
-					if(head.channel === whitelist[i].channel) {
-							whitelist.splice(i, 1);
-							found = true;
-							chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
-							break;
+					let found = false;
+					//go through the whitelist
+					for(let i=0; i<whitelist.length; i++){
+						//if we find a match
+						if(head.channel === whitelist[i].channel) {
+								whitelist.splice(i, 1);
+								found = true;
+								break;
+						}
 					}
-				}
 
-				//if we end up not finding anything, then immediately add it to the list
-				if(!found){
-					obj.enabled = true;
-					whitelist.push(obj);
-				}
+					//if we end up not finding anything, then immediately add it to the list
+					if(!found){
+						obj.enabled = true;
+						whitelist.push(obj);
+					}
 
-				//set the local whitelist var to the new edited list, and set the profile storage
-				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
-					chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+					//REGULATORY CHECK
+					trimName(whitelist, "isTwitch");
+
+					//set profile storage
+					chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+						if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+						else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+					});
+					
 				});
-				
-			});
+			}
+			else{
+				removeFromWhitelist(head.channel);
+
+				//REGULATORY CHECK
+				trimName(whitelist, "isTwitch");
+
+				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+					if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+					else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+				});
+
+				//iframes fuck with everything in modern browsers. just reload page.
+				window.location.reload();
+			}
 		}
 });
+
+function updateIFrames(channel){
+	let oldchat = findChatIFrame();
+
+	oldchat.setAttribute("src", "https://www.twitch.tv/popout/" + channel + "/chat");
+}
+
+function removeFromWhitelist(name){
+	for(let i=0; i<whitelist.length; i++){
+		if(whitelist[i].channel === name){
+			whitelist.splice(i, 1);
+			i-=1;
+		}
+	}
+}
 
 function isEnabled(){
 	let head = getTwitch();
@@ -155,14 +203,12 @@ function addDGG(width){
 }
 
 function removeDGG(){
-	let dgg = findDGG();
-	if(dgg){
-		let chat = findChat();
-		let resizer = findResizer();
-		chat.parentNode.removeChild(dgg);
-		chat.parentNode.removeChild(resizer);
-		chat.style.display = "block";
-	}
+	let parent = findChat().parentNode;
+
+	parent.childNodes.forEach((dom) => {
+		if(dom.getAttribute("data-a-target") != "right-column-chat-bar")
+			parent.removeChild(dom);
+	});
 }
 
 function findDGG(){
@@ -209,51 +255,20 @@ function getTwitch(){
 
 function addEvents(){
 	let resizer = findResizer();
-	let dgg = findDGG().childNodes[0].contentDocument ? findDGG().childNodes[0].contentDocument : findDGG().childNodes[0].contentWindow.document;
+	let dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
 	let swapper = findSwapper();
-	//if the resizer div exists
-	if(resizer){
-		//on mouse down, change the DOM's property of "md" (mousedown) to true
-		resizer.addEventListener("mousedown", e => {
-			(resizer.getAttribute("md") === "true") ? null : resizer.setAttribute("md", "true");
-		});
+	let lamechat = findChatIFrame().contentDocument ? findChatIFrame().contentDocument : findChatIFrame().contentWindow.document;
 
-		//COSMETIC HOVER EVENTS (does nothing rn im too smoothbrain to figure it out)
-		resizer.addEventListener("mouseenter", e => {
-			resizer.setAttribute("hover", "true");
-		});
-		resizer.addEventListener("mouseleave", e => {
-			resizer.setAttribute("hover", "false");
-		});
+	//on mouse down, change the DOM's property of "md" (mousedown) to true
+	resizer.addEventListener("mousedown", e => {
+		(resizer.getAttribute("md") === "true") ? null : resizer.setAttribute("md", "true");
+	});
 
-		//button to swap DGG and normal chat
-		swapper.addEventListener("click", () => {
-			let enable = toggleDGG() === "dgg" ? true : false;
-
-			let head = getTwitch();
-
-			let found = false;
-			for(let i=0; i<whitelist.length; i++){
-				if(head.channel == whitelist[i].channel){
-					found = true;
-					whitelist[i].enabled = enable;
-					break;
-				}
-			}
-
-			if(found)
-				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
-
-		});
-		swapper.addEventListener("mouseenter", () => {
-			swapper.style.cursor = "pointer";
-		});
-		swapper.addEventListener("mouseleave", () => {
-			swapper.style.cursor = "default";
-		});
-
-		//apply an event on the whole document to turn it off on mouseup
-		document.body.addEventListener("mouseup", e => {
+	//apply an event on all elements in this made up array
+	[document.body, dgg.body, lamechat.body]
+	.forEach((dom, n) => {
+		//when you let go of the mouse, save the width and put it in to the storage
+		dom.addEventListener("mouseup", e => {
 			(resizer.getAttribute("md") === "true") ? resizer.setAttribute("md", "false") : null;
 
 			let channel = getTwitch().channel;
@@ -273,32 +288,77 @@ function addEvents(){
 			if(!found)
 				whitelist.push(obj);
 
+			//REGULATORY CHECK
+			trimName(whitelist, "isTwitch");
+
 			chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
 		});
-		//when the mouse moves along the page, get the mouse position and change the width according to the the distance from the right side of the screen
-		document.body.addEventListener("mousemove", e => {
+
+		//when the mouse moves, save the width
+		dom.addEventListener("mousemove", e => {
 			if(resizer.getAttribute("md") === "true"){
 				let dgg = findDGG();
-				let posx = e.clientX;
+				let posx = e.clientX - findResizer().style.width/2;
 				let val = window.screen.width - posx;
 
 				dgg.style.width = val + "px";
 			}
 		});
+	});
 
-		dgg.body.addEventListener("mouseup", e => {
-			(resizer.getAttribute("md") === "true") ? resizer.setAttribute("md", "false") : null;
-		});
-		//when the mouse moves along the page, get the mouse position and change the width according to the the distance from the right side of the screen
-		dgg.body.addEventListener("mousemove", e => {
-			if(resizer.getAttribute("md") === "true"){
-				let dgg = findDGG();
-				let posx = e.clientX;
-				let val = window.screen.width - posx;
+	//button to swap DGG and normal chat
+	swapper.addEventListener("click", () => {
+		let enable = toggleDGG() === "dgg" ? true : false;
 
-				dgg.style.width = val + "px";
+		let head = getTwitch();
+
+		let found = false;
+		for(let i=0; i<whitelist.length; i++){
+			if(head.channel == whitelist[i].channel){
+				found = true;
+				whitelist[i].enabled = enable;
+				break;
 			}
-		});
+		}
+
+		//REGULATORY CHECK
+		trimName(whitelist, "isTwitch");
+
+		if(found)
+			chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
+	});
+
+	//COSMETIC HOVER EVENTS (does nothing rn im too smoothbrain to figure it out)
+	resizer.addEventListener("mouseenter", e => {
+		resizer.setAttribute("hover", "true");
+	});
+	resizer.addEventListener("mouseleave", e => {
+		resizer.setAttribute("hover", "false");
+	});
+
+	swapper.addEventListener("mouseenter", () => {
+		swapper.style.cursor = "pointer";
+	});
+	swapper.addEventListener("mouseleave", () => {
+		swapper.style.cursor = "default";
+	});
+}
+
+//had to make this function because i have no idea what the fuck is wrong with my code and it keeps adding isTwitch to random fucking entries
+//is pass by reference, no need to return, it will do it all automatically
+function trimName(arr, str){
+	for(let i=0; i<arr.length; i++){
+		if(arr[i].hasOwnProperty(str)){
+			if(!arr[i].hasOwnProperty("enabled")){
+				arr.splice(i, 1);
+				//go back because fuck logic
+				//no but seriously, splicing shifts everything ahead of it up one, so we want to go back one to really be where we were before
+				i=-1;
+			}
+			else{
+				delete arr[i][str];
+			}
+		}
 	}
 }
 
