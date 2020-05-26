@@ -10,4 +10,12 @@ chrome.browserAction.onClicked.addListener((tab) =>{
 		chrome.tabs.sendMessage(tabs[0].id, {message: "--dgg--toggle"}, function(response){});
 	});
 	
+<<<<<<< Updated upstream
 });
+=======
+});
+
+function displayList(){
+	chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {for(var i=0; i<data["--dgg--Whitelist"].length; i++)console.log(data["--dgg--Whitelist"][i])});
+}
+>>>>>>> Stashed changes
