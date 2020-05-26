@@ -59,58 +59,194 @@ let cont_evt = setInterval(() => {
 }, 500);
 
 //message handler
-chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
-	//toggle dgg by getting the current value, then set it to the inverse
-	if(request.message === "--dgg--toggle"){
-		let head = getTwitch();
-		var dggExists = findDGG();
-		if(head.isTwitch && findChat()){
-			if(dggExists.length < 1)
-				addDGG();
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+		//toggle dgg based on if it is enabled or not on the current channel
+		//event will trigger when you click the extension icon
+		if(request.message === "--dgg--toggle"){
+			
+			let dgg = findDGG();
+			let head = getTwitch();
+			if(!dgg){
+				//get the whitelist as stored on the profile
+				chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
+					
+					let head = getTwitch();
+					let dgg = findDGG();
+
+					//set our global whitelist
+					whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
+
+					let obj = {
+						channel: head.channel,
+						width: dgg ? dgg.style.width : DEFAULT_WIDTH,
+						enabled: null
+					};
+
+					let found = false;
+					//go through the whitelist
+					for(let i=0; i<whitelist.length; i++){
+						//if we find a match
+						if(head.channel === whitelist[i].channel) {
+								whitelist.splice(i, 1);
+								found = true;
+								break;
+						}
+					}
+
+					//if we end up not finding anything, then immediately add it to the list
+					if(!found){
+						obj.enabled = true;
+						whitelist.push(obj);
+					}
+
+					//REGULATORY CHECK
+					trimName(whitelist, "isTwitch");
+
+					//set profile storage
+					chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+						if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+						else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+					});
+					
+				});
+			}
+			else{
+				removeFromWhitelist(head.channel);
+
+				//REGULATORY CHECK
+				trimName(whitelist, "isTwitch");
+
+				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+					if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+					else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+				});
+
+				//iframes fuck with everything in modern browsers. just reload page.
+				window.location.reload();
+			}
 		}
-	}
 });
 
-function toggleDGG(val){
-	let dgg = findDGG();
-	let chat = findChat();
-	
-	if(dgg){
-		if(dgg.attr("visible") === "true"){
-			dgg.attr("style", "display: none");
-			dgg.attr("visible", "false");
-			
-			chat.attr("style", "display: block");
-		}else{
-			dgg.attr("style", "display: block");
-			dgg.attr("visible", "true");
-			
-			chat.attr("style", "display: none");
+function updateIFrames(channel){
+	let oldchat = findChatIFrame();
+
+	oldchat.setAttribute("src", "https://www.twitch.tv/popout/" + channel + "/chat");
+}
+
+function removeFromWhitelist(name){
+	for(let i=0; i<whitelist.length; i++){
+		if(whitelist[i].channel === name){
+			whitelist.splice(i, 1);
+			i-=1;
 		}
 	}
 }
 
-function addDGG(){
+function isEnabled(){
+	let head = getTwitch();
+
+	for(let i=0; i< whitelist.length; i++){
+		if(head.channel === whitelist[i].channel)
+			return true;
+	}
+	return false;
+}
+
+function toggleDGG(which){
+	let swaptype = which ? which : null; 
+	let dgg = findDGGIFrame();
+	let chat = findChatIFrame();
+
+	if(swaptype != null){
+		if(swaptype == "dgg"){
+			dgg.style.display = "block";
+			chat.style.display = "none";
+			dgg.setAttribute("visible", "true");
+			return "dgg";
+		}
+		else if(swaptype == "twitch"){
+			dgg.style.display = "none";
+			chat.style.display = "block";
+			dgg.setAttribute("visible", "false");
+			return "twitch";
+		}
+	}
+	else{
+		if(dgg.getAttribute("visible") === "true"){
+			dgg.style.display = "none";
+			chat.style.display = "block";
+			dgg.setAttribute("visible", "false");
+			return "twitch";
+		}else{
+			dgg.style.display = "block";
+			chat.style.display = "none";
+			dgg.setAttribute("visible", "true");
+			return "dgg";
+		}
+	}
+}
+
+function addDGG(width){
 	let dom = findChat();
 	if(dom){
-		let dgg = "<div class='dggPepeLaugh' visible='true' style='display:block; height: 100%; !important'><iframe src='https://www.destiny.gg/embed/chat' style='height: 100% !important'></iframe></div>";
-		
-		dom.attr("style", "display: none !important");
-		dom.parent().html(dom.parent().html() + dgg);
+		let dgg = "<div class='dggPepeLaugh' visible='true' style='display:block; height: 100% !important; width: "+width+";'><iframe class = 'boringChat' src='https://www.twitch.tv/popout/" + getTwitch().channel + "/chat' style = 'height: 100% !important; width: 100% !important; display: none;'></iframe><iframe class = 'funChat' src='https://www.destiny.gg/embed/chat' style='height: 100% !important; width: 100% !important; display: block;'></iframe></div>";
+
+		let resizer = "<span class='dggResizer' md='false' hover='false' style='opacity:0'></span>";
+
+		let swapper = "<span class='dggSwapper'><img src='" + chrome.runtime.getURL("swapicon.png") + "' width='50' height='50'></img></span>";
+
+		dom.setAttribute("style", "display: none !important");
+
+		dom.parentNode.innerHTML += resizer + swapper + dgg;
+		//add the event handler DOM (takes up whole screen)
 	}
+}
+
+function removeDGG(){
+	let parent = findChat().parentNode;
+
+	parent.childNodes.forEach((dom) => {
+		if(dom.getAttribute("data-a-target") != "right-column-chat-bar")
+			parent.removeChild(dom);
+	});
 }
 
 function findDGG(){
-	return $(".dggPepeLaugh");
+	return document.querySelector(".dggPepeLaugh");
+}
+
+function findChatIFrame(){
+	return document.querySelector(".boringChat");
+}
+
+function findDGGIFrame(){
+	return document.querySelector(".funChat");
 }
 
 function findChat(){
-	return $("div[data-a-target^='right-column-chat-bar']");
+	return document.querySelector("div[data-a-target^='right-column-chat-bar']");
+}
+
+function findResizer(){
+	return document.querySelector(".dggResizer");
+}
+
+function findSwapper(){
+	return document.querySelector(".dggSwapper");
 }
 
 function getTwitch(){
-	let isTwitch = $("meta[property^='og:site_name']") ? ($("meta[property^='og:site_name']").attr("content") == "Twitch") : null;
-	let channelName = $("meta[property^='og:url']") ? $("meta[property^='og:url']").attr("content").split("twitch.tv/")[1] : null;
+	let isTwitch = document.querySelector("meta[property^='og:site_name']") ? (document.querySelector("meta[property^='og:site_name']").getAttribute("content") == "Twitch") : null;
+	let channelName = null;
+	if(document.querySelector("meta[property^='og:url']")){
+		let htmlname = document.querySelector("meta[property^='og:url']").getAttribute("content").split("twitch.tv/")[1];
+		let href = window.location.href;
+
+		if(href.indexOf(htmlname) > -1)
+			channelName = htmlname;
+		else //janky. can be exploited
+			channelName = href.split("twitch.tv/")[1];
+	}
 	return obj = {
 		isTwitch: (isTwitch) ? true : false,
 		channel: (channelName) ? channelName: null

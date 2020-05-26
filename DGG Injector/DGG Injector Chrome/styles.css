@@ -1,0 +1,76 @@
+.dggResizer{
+	position: absolute;
+	height: 100%;
+	width: 15px;
+	background-color: #567cba;
+	cursor: default;
+	opacity: 0;
+
+	animation-name: dggResizemouseleave;
+	animation-duration: .15s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease;
+}
+
+.dggResizer:hover{
+	cursor: ew-resize;
+	animation-name: dggResizemouseenter;
+	animation-duration: .15s;
+	animation-fill-mode: forwards;
+	animation-timing-function: ease;
+}
+
+.dggSwapper{
+	width: 50px;
+	height: 50px;
+	position: absolute;
+	background-color:rgba(130,140,170,0.4);
+	border-radius: 5px;
+}
+.dggSwapper img{
+	opacity: 1 !important;
+}
+
+
+/*KEYRFRAMES FIREFOX/IE*/
+
+
+@keyframes dggResizemouseenter{
+	 from{
+	 	opacity: 0;
+	 }
+	 to{
+	 	opacity: 1;
+	 }
+}
+
+@keyframes dggResizemouseleave{
+	 from{
+	 	opacity: 1;
+	 }
+	 to{
+	 	opacity: 0;
+	 }
+}
+
+
+/* KEYFRAMES CHROME/SAFARI/OPERA*/
+
+
+@-webkit-keyframes dggResizemouseenter{
+	 from{
+	 	opacity: 0;
+	 }
+	 to{
+	 	opacity: 1;
+	 }
+}
+
+@-webkit-keyframes dggResizemouseleave{
+	 from{
+	 	opacity: 1;
+	 }
+	 to{
+	 	opacity: 0;
+	 }
+}

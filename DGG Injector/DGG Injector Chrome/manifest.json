@@ -7,7 +7,7 @@
 		"128": "icon.png"
 	},
 	"description": "NOTE: must be reactivated each time and old twitch chat will fail to load until you refresh the page. PepeLaugh, my friends.",
-	"permissions": ["https://twitch.tv/*"],
+	"permissions": ["https://twitch.tv/*", "storage"],
 	"browser_action": {
 		"default_icon": "icon.png",
 		"persistent": true
@@ -15,10 +15,16 @@
 	"content_scripts": [
 		{
 			"matches": ["https://www.twitch.tv/*"],
-			"js": ["jquery-1.12.4.min.js", "main.js"]
+			"js": ["main.js"],
+			"css": ["styles.css"]
 		}
 	],
 	"background":{
 		"scripts": ["background.js"]
-	}
+	},
+
+	"web_accessible_resources": [
+		"styles.css",
+		"swapicon.png"
+	]
 }
