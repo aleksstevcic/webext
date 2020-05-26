@@ -1,5 +1,3 @@
-<<<<<<< Updated upstream
-=======
 let whitelist = [];
 let currChannel = "";
 const DEFAULT_WIDTH = "340px";
@@ -60,7 +58,6 @@ let cont_evt = setInterval(() => {
 	}
 }, 500);
 
->>>>>>> Stashed changes
 //message handler
 chrome.runtime.onMessage.addListener(function(request, sender, sendResponse){
 	//toggle dgg by getting the current value, then set it to the inverse
@@ -120,8 +117,6 @@ function getTwitch(){
 	};
 }
 
-<<<<<<< Updated upstream
-=======
 function addEvents(){
 	let resizer = findResizer();
 	let dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
@@ -297,4 +292,3 @@ function lerp(start, end, percent){
 	console.log(start + " " + end + " " + percent + " " + start + ((end-start)*percent));
 	return start + ((end-start)*percent);
 }
->>>>>>> Stashed changes
