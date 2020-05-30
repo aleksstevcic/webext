@@ -62,7 +62,7 @@ let cont_evt = setInterval(() => {
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		//toggle dgg based on if it is enabled or not on the current channel
 		//event will trigger when you click the extension icon
-		if(request.message === "--dgg--toggle"){
+		if(request.message === "--dgg--enable"){
 			
 			let dgg = findDGG();
 			let head = getTwitch();
@@ -110,6 +110,7 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 					
 				});
 			}
+			/*
 			else{
 				removeFromWhitelist(head.channel);
 
@@ -124,6 +125,11 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				//iframes fuck with everything in modern browsers. just reload page.
 				window.location.reload();
 			}
+			*/
+		}
+		else if(request.message === "--dgg--getTwitch"){
+			chrome.runtime.sendMessage({message: "--dgg--sendTwitch", data: getTwitch()}, () => {});
+			//sendResponse(getTwitch());
 		}
 });
 
@@ -131,15 +137,6 @@ function updateIFrames(channel){
 	let oldchat = findChatIFrame();
 
 	oldchat.setAttribute("src", "https://www.twitch.tv/popout/" + channel + "/chat");
-}
-
-function removeFromWhitelist(name){
-	for(let i=0; i<whitelist.length; i++){
-		if(whitelist[i].channel === name){
-			whitelist.splice(i, 1);
-			i-=1;
-		}
-	}
 }
 
 function isEnabled(){
@@ -193,7 +190,7 @@ function addDGG(width){
 
 		let resizer = "<span class='dggResizer' md='false' hover='false' style='opacity:0'></span>";
 
-		let swapper = "<span class='dggSwapper'><img src='" + chrome.runtime.getURL("swapicon.png") + "' width='50' height='50'></img></span>";
+		let swapper = "<span class='dggSwapper'><img src='" + chrome.runtime.getURL("icons/swapicon.png") + "' width='50' height='50'></img></span>";
 
 		dom.setAttribute("style", "display: none !important");
 
@@ -233,24 +230,6 @@ function findResizer(){
 
 function findSwapper(){
 	return document.querySelector(".dggSwapper");
-}
-
-function getTwitch(){
-	let isTwitch = document.querySelector("meta[property^='og:site_name']") ? (document.querySelector("meta[property^='og:site_name']").getAttribute("content") == "Twitch") : null;
-	let channelName = null;
-	if(document.querySelector("meta[property^='og:url']")){
-		let htmlname = document.querySelector("meta[property^='og:url']").getAttribute("content").split("twitch.tv/")[1];
-		let href = window.location.href;
-
-		if(href.indexOf(htmlname) > -1)
-			channelName = htmlname;
-		else //janky. can be exploited
-			channelName = href.split("twitch.tv/")[1];
-	}
-	return obj = {
-		isTwitch: (isTwitch) ? true : false,
-		channel: (channelName) ? channelName: null
-	};
 }
 
 function addEvents(){
@@ -376,24 +355,6 @@ function setWidthToStorage(w){
 	trimName(whitelist, "isTwitch");
 
 	chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
-}
-
-//had to make this function because i have no idea what the fuck is wrong with my code and it keeps adding isTwitch to random fucking entries
-//is pass by reference, no need to return, it will do it all automatically
-function trimName(arr, str){
-	for(let i=0; i<arr.length; i++){
-		if(arr[i].hasOwnProperty(str)){
-			if(!arr[i].hasOwnProperty("enabled")){
-				arr.splice(i, 1);
-				//go back because fuck logic
-				//no but seriously, splicing shifts everything ahead of it up one, so we want to go back one to really be where we were before
-				i=-1;
-			}
-			else{
-				delete arr[i][str];
-			}
-		}
-	}
 }
 
 

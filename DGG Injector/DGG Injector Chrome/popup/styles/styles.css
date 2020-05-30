@@ -1,0 +1,51 @@
+body{
+	background-color: #222;
+	color: white;
+	width: 325px;
+	height: auto;
+	max-height: 450px;
+	overflow: scroll;
+}
+
+.disp{
+	display: flex !important;
+}
+
+.ndisp{
+	display: none !important;
+}
+
+.dispArea *{
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	margin: 0 auto;
+	padding: 10px;
+	margin-right: 5px;
+	font-family: calibri;
+	font-size: 14px;
+}
+
+.dispArea div span{
+	font-weight: bold;
+	font-size: 16px;
+}
+
+.dispArea div textarea{
+	width: 40px;
+	height: 15px;
+	resize: none;
+	overflow: hidden;
+}
+
+.dispArea div textarea:first-child{
+	width: 115px;
+}
+
+.dispArea div button:last-child{
+	margin-left: 25px;
+}
+
+.dispArea div button{
+	width: 55px;
+}
