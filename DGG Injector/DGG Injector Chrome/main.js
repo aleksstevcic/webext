@@ -23,6 +23,7 @@ let datagetter = setInterval(() => {
 }, 250);
 
 //this runs parallel every 500 milliseconds
+//not efficient xd
 //will slam in dgg for you if you have it toggled on for this specified channel
 let cont_evt = setInterval(() => {
 	let dggExists = findDGG();
@@ -50,6 +51,9 @@ let cont_evt = setInterval(() => {
 		if(found){
 			addDGG(width);
 			addEvents();
+			//new
+			fixTwitchsShit();
+
 			//if it is enabled, show dgg, otherwise default to twitch
 			if(enable) toggleDGG("dgg");
 			else toggleDGG("twitch");
@@ -132,6 +136,20 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			//sendResponse(getTwitch());
 		}
 });
+
+//in a new twitch update,
+//they decided it was a great idea that the width of the player and the description should be //HARD CODED// to account for the width of the chat,
+//so adding an iframe presses the width of the window out, and then even furthermore by 34em by the hardcoded css calc value of (100% - 34em).
+//lmao.
+function fixTwitchsShit(){
+	
+	//setting the width of the channel root player with chat causes fucky resizing of my chat, but fixes the issue. hmm..
+	document.querySelectorAll(".channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat").forEach( (dom, i) => {
+		console.log(dom);
+		dom.style.width = "100%";
+	});
+		
+}
 
 function updateIFrames(channel){
 	let oldchat = findChatIFrame();

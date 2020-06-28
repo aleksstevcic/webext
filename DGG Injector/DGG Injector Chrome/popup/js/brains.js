@@ -148,17 +148,33 @@ function makeEvents(){
 		
 		chrome.tabs.query({active: true, currentWindow: true}, (tabs)=>{
 			let channel = tabs[0].url.split("twitch.tv/")[1];
-			channel = channel.split("?")[0];
-			channel = channel.split("#")[0];
-			channel = channel.split("&")[0];
+			if(channel){
+				channel = channel.split("?")[0];
+				channel = channel.split("#")[0];
+				channel = channel.split("&")[0];
 
-			let obj = {};
+				let obj = {};
 
-			if(exists(channel, whitelist)){
+				if(exists(channel, whitelist)){
 
-				if(!exists("", whitelist)){
+					if(!exists("", whitelist)){
+						obj = {
+							channel: "",
+							enabled: true,
+							width: "340px"
+						};
+
+						whitelist.push(obj);
+						makeObj(obj);
+						pushToChromeStorage(whitelist);
+						window.location.reload();
+					}
+
+				}
+				else{
+
 					obj = {
-						channel: "",
+						channel: channel,
 						enabled: true,
 						width: "340px"
 					};
@@ -168,20 +184,6 @@ function makeEvents(){
 					pushToChromeStorage(whitelist);
 					window.location.reload();
 				}
-
-			}
-			else{
-
-				obj = {
-					channel: channel,
-					enabled: true,
-					width: "340px"
-				};
-
-				whitelist.push(obj);
-				makeObj(obj);
-				pushToChromeStorage(whitelist);
-				window.location.reload();
 			}
 		});
 		/*
