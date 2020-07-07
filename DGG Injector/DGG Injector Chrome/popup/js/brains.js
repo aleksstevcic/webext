@@ -1,4 +1,5 @@
 let whitelist;
+
 document.addEventListener("DOMContentLoaded", (event) => {
 	
 	/*
@@ -27,36 +28,41 @@ function main(){
 
 function makeEditor(data){
 	let mainDiv = document.querySelector(".dispArea");
+	let tbody = document.querySelector(".dispArea tbody");
 	for(let dataIndex = 0; dataIndex < data.length; dataIndex++){
-		mainDiv.appendChild(makeObj(data[dataIndex]));
+		tbody.appendChild(makeObj(data[dataIndex]));
 	}
 }
 
 function makeObj(obj){
 	//MAIN BLOCK
-	let div = document.createElement("div");
+	let div = document.createElement("tr");
 	div.setAttribute("identifier", obj.channel);
 	div.setAttribute("id", "row");
 	div.setAttribute("class", "disp");
 
 	//CHANNEL NAME
+	let ctd = document.createElement("td");
 	let channelBlock = document.createElement("textarea");
 	channelBlock.setAttribute("class", "channel");
 	channelBlock.setAttribute("placeholder", "channel name");
 	channelBlock.innerText = obj.channel;
 
 	//WIDTH BOX
+	let wtd = document.createElement("td");
 	let widthBlock = document.createElement("textarea");
 	widthBlock.setAttribute("class", "width");
 	widthBlock.setAttribute("placeholder", "width");
 	widthBlock.innerText = obj.width.substring(0, obj.width.length - 2);
 
 	//DGG OR TWITCH? BUTTON
+	let ttd = document.createElement("td");
 	let typeBlock = document.createElement("button");
 	typeBlock.setAttribute("class", "enabled");
 	typeBlock.innerText = (obj.enabled ? "dgg" : "twitch");
 
 	//DELETE BUTTON
+	let dtd = document.createElement("td");
 	let deleteBlock = document.createElement("button");
 	deleteBlock.setAttribute("class", "delete");
 	deleteBlock.innerText = "Remove";
@@ -69,12 +75,12 @@ function makeObj(obj){
 
 		//this will return false if there have been no changes, so as to not call chrome storage all the time
 
-		let a = findAndReplace(e.srcElement.parentNode.getAttribute("identifier"), obj, whitelist);
+		let a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
 		if(a){
 			whitelist = a;
 			pushToChromeStorage(whitelist);
-			e.srcElement.parentNode.setAttribute("identifier",obj.channel);
+			getSrcElement(e).setAttribute("identifier",obj.channel);
 		}
 		
 	};
@@ -85,12 +91,12 @@ function makeObj(obj){
 		//toggle
 		obj.enabled = !obj.enabled;
 
-		let a = findAndReplace(e.srcElement.parentNode.getAttribute("identifier"), obj, whitelist);
+		let a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
 		if(a){
 			whitelist = a;
 			pushToChromeStorage(whitelist);
-			e.srcElement.parentNode.querySelector(".enabled").innerText = obj.enabled ? "dgg" : "twitch";
+			getSrcElement(e).querySelector(".enabled").innerText = obj.enabled ? "dgg" : "twitch";
 		}
 	};
 
@@ -101,27 +107,38 @@ function makeObj(obj){
 		removeFromList(obj.channel, whitelist);
 
 		pushToChromeStorage(whitelist);
-		let itm = e.srcElement.parentNode;
+		let itm = getSrcElement(e);
 		
 		itm.parentNode.removeChild(itm);
 	};
 
 
 	//APPEND THAT SHIT
-	div.appendChild(channelBlock);
-	div.appendChild(widthBlock);
-	div.appendChild(typeBlock);
-	div.appendChild(deleteBlock);
+
+
+	ctd.appendChild(channelBlock);
+	wtd.appendChild(widthBlock);
+	ttd.appendChild(typeBlock);
+	dtd.appendChild(deleteBlock);
+
+	div.appendChild(ctd);
+	div.appendChild(wtd);
+	div.appendChild(ttd);
+	div.appendChild(dtd);
 
 	//RETURN THAT SHIT
 	return div;
 }
 
+function getSrcElement(e){
+	return e.srcElement.parentNode.parentNode;
+}
+
 function makeEntry(e){
 	return {
-		channel: e.srcElement.parentNode.querySelector(".channel").value,
-		enabled: e.srcElement.parentNode.querySelector(".enabled").innerText === "dgg",
-		width:   e.srcElement.parentNode.querySelector(".width").value + "px"
+		channel: getSrcElement(e).querySelector(".channel").value,
+		enabled: getSrcElement(e).querySelector(".enabled").innerText === "dgg",
+		width:   getSrcElement(e).querySelector(".width").value + "px"
 	};
 }
 
@@ -137,9 +154,15 @@ function makeEvents(){
 			});
 		}
 		else{
+
+			let regex;
 			doms.forEach((item, i) => {
-				if(!(item.childNodes[0].value.indexOf(e.srcElement.value) > -1))
+				//perhaps unoptimal for performance
+				regex = new RegExp(e.srcElement.value, "gim");
+
+				if(!regex.test(item.childNodes[0].childNodes[0].value)){
 					item.setAttribute("class", "ndisp");
+				}
 			});
 		}
 	};

@@ -59,83 +59,11 @@ let cont_evt = setInterval(() => {
 			else toggleDGG("twitch");
 			//runResizerAnimation();
 		}
+
+		clearInterval(cont_evt);
+		cont_evt = undefined;
 	}
-}, 500);
-
-//message handler
-chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-		//toggle dgg based on if it is enabled or not on the current channel
-		//event will trigger when you click the extension icon
-		if(request.message === "--dgg--enable"){
-			
-			let dgg = findDGG();
-			let head = getTwitch();
-			if(!dgg){
-				//get the whitelist as stored on the profile
-				chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-					
-					let head = getTwitch();
-					let dgg = findDGG();
-
-					//set our global whitelist
-					whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
-
-					let obj = {
-						channel: head.channel,
-						width: dgg ? dgg.style.width : DEFAULT_WIDTH,
-						enabled: null
-					};
-
-					let found = false;
-					//go through the whitelist
-					for(let i=0; i<whitelist.length; i++){
-						//if we find a match
-						if(head.channel === whitelist[i].channel) {
-								whitelist.splice(i, 1);
-								found = true;
-								break;
-						}
-					}
-
-					//if we end up not finding anything, then immediately add it to the list
-					if(!found){
-						obj.enabled = true;
-						whitelist.push(obj);
-					}
-
-					//REGULATORY CHECK
-					trimName(whitelist, "isTwitch");
-
-					//set profile storage
-					chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
-						if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
-						else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
-					});
-					
-				});
-			}
-			/*
-			else{
-				removeFromWhitelist(head.channel);
-
-				//REGULATORY CHECK
-				trimName(whitelist, "isTwitch");
-
-				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
-					if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
-					else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
-				});
-
-				//iframes fuck with everything in modern browsers. just reload page.
-				window.location.reload();
-			}
-			*/
-		}
-		else if(request.message === "--dgg--getTwitch"){
-			chrome.runtime.sendMessage({message: "--dgg--sendTwitch", data: getTwitch()}, () => {});
-			//sendResponse(getTwitch());
-		}
-});
+}, 750);
 
 //in a new twitch update,
 //they decided it was a great idea that the width of the player and the description should be //HARD CODED// to account for the width of the chat,
@@ -407,3 +335,81 @@ function lerp(start, end, percent){
 	console.log(start + " " + end + " " + percent + " " + start + ((end-start)*percent));
 	return start + ((end-start)*percent);
 }
+
+
+//message handler
+/*
+chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+		//toggle dgg based on if it is enabled or not on the current channel
+		//event will trigger when you click the extension icon
+		if(request.message === "--dgg--enable"){
+			
+			let dgg = findDGG();
+			let head = getTwitch();
+			if(!dgg){
+				//get the whitelist as stored on the profile
+				chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
+					
+					let head = getTwitch();
+					let dgg = findDGG();
+
+					//set our global whitelist
+					whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
+
+					let obj = {
+						channel: head.channel,
+						width: dgg ? dgg.style.width : DEFAULT_WIDTH,
+						enabled: null
+					};
+
+					let found = false;
+					//go through the whitelist
+					for(let i=0; i<whitelist.length; i++){
+						//if we find a match
+						if(head.channel === whitelist[i].channel) {
+								whitelist.splice(i, 1);
+								found = true;
+								break;
+						}
+					}
+
+					//if we end up not finding anything, then immediately add it to the list
+					if(!found){
+						obj.enabled = true;
+						whitelist.push(obj);
+					}
+
+					//REGULATORY CHECK
+					trimName(whitelist, "isTwitch");
+
+					//set profile storage
+					chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+						if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+						else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+					});
+					
+				});
+			}
+			
+			else{
+				removeFromWhitelist(head.channel);
+
+				//REGULATORY CHECK
+				trimName(whitelist, "isTwitch");
+
+				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
+					if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
+					else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
+				});
+
+				//iframes fuck with everything in modern browsers. just reload page.
+				window.location.reload();
+			}
+			
+		}
+		else if(request.message === "--dgg--getTwitch"){
+			chrome.runtime.sendMessage({message: "--dgg--sendTwitch", data: getTwitch()}, () => {});
+			//sendResponse(getTwitch());
+		}
+});
+*/

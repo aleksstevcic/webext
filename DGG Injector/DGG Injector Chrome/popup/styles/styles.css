@@ -7,23 +7,60 @@ body{
 	overflow: scroll;
 }
 
-.disp{
-	display: flex !important;
+.add{
+	width: 150px;
+	top: -13px;
+	height: 37px;
+	position: relative;
 }
 
+.search{
+	resize: none;
+}
 .ndisp{
 	display: none !important;
 }
 
-.dispArea *{
+.title{
+	background-color: rgb(126, 201, 255);
+	overflow: visible;
+	width: 100%;
+	height: 50px;
+	margin: 0 auto;
+	box-shadow: 0px 10px 50px rgb(126, 201, 255);
+	text-align: center;
+	border-radius: 5px;
+	margin-bottom: 10px;
+}
+
+.title div{
 	display: flex;
+	justify-content: center;
+	background-color: rgb(118, 187, 237);
+	width: 92.5%;
+	height: 87.5%;
+	top: 6.25%;
+	left: 3.75%;
+	position: relative;
+	border-radius: 5px;
+	box-shadow: 0px 0px 10px rgb(126, 201, 255);
+}
+
+.title h1{
+	position: relative;
+	top: -10px;
+	color: #2a435d;
+}
+
+.dispArea *{
 	justify-content: center;
 	align-items: center;
 	margin: 0 auto;
-	padding: 10px;
-	margin-right: 5px;
 	font-family: calibri;
 	font-size: 14px;
+	resize: none;
+	padding-top: 6px;
+	padding-bottom: 6px;
 }
 
 .dispArea div span{
@@ -50,6 +87,21 @@ body{
 	width: 55px;
 }
 
-.channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat {
-    width: 100% !important;
+.channel, .width, .enabled, .delete{
+	height: 18px;
+	overflow: hidden;
+}
+
+.channel{
+	width: 100px;
+}
+
+.enabled, .delete{
+	margin-top: -3px;
+	height: 32px;
+	width: 70px;
+}
+
+.width{
+	width: 50px;
 }

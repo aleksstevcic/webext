@@ -6,8 +6,10 @@
 		<script type="text/javascript" src="js/brains.js"></script>
 	</head>
 	<body>
-		<div>
-			this is functional but looks like shit :) the leftmost textbox is channel name, then to the right of that is the width in pixels, the third is whether or not it should start in dgg or twitch chat, and fourth is to delete it. keep in mind that the width and which chat to start on will be updated on the fly as you see fit on a per-page basis, but editing them through here will require a page refresh.
+		<div class="title">
+			<div>
+				<h1>DGG Injector</h1>
+			</div>
 		</div>
 		<div>
 			<textarea class="search" placeholder="search existing here"></textarea>
@@ -16,8 +18,19 @@
 			</span>
 		</div>
 		
-		<div class="dispArea">
-		</div>
+		<table class="dispArea">
+			<thead>
+				<tr>
+					<th>Channel</th>
+					<th>Width</th>
+					<th>DGG/Twitch</th>
+					<th>Remove</th>
+				</tr>
+			</thead>
+			<tbody>
+				
+			</tbody>
+		</table>
 
 	</body>
 </html>
