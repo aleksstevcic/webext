@@ -67,7 +67,7 @@ const switchToDestiny = (timer) => setInterval(() => {
 	}
 }, timer);
 
-const isDestinyOnline = () => document.querySelector('[href="/mrmouton"] .side-nav-card__live-status span').textContent !== "Offline";
+const isDestinyOnline = () => document.querySelector('[href="/destiny"] .side-nav-card__live-status span').textContent !== "Offline";
 
 //message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
