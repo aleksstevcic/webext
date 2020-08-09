@@ -4,7 +4,7 @@ const DEFAULT_WIDTH = "300px";
 
 //this interval gets the current whitelist and saves it locally
 let datagetter = setInterval(() => {
-	const head = getTwitch();
+	let head = getTwitch();
 
 	if(head.isTwitch){
 		chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
@@ -74,7 +74,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 		//toggle dgg based on if it is enabled or not on the current channel
 		//event will trigger when you click the extension icon
 		if(request.message === "--dgg--toggle"){
-			console.log("KYLETEST", "THIS IS ON");
 			
 			let dgg = findDGG();
 			let head = getTwitch();
@@ -137,7 +136,6 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 				window.location.reload();
 			}
 		}
-		
 });
 
 function updateIFrames(channel){
