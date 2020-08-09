@@ -62,8 +62,9 @@ let cont_evt = setInterval(() => {
 const switchToDestiny = (timer) => setInterval(() => {
 	if(location.pathname === "/destiny") clearInterval(this);
 	else if (isDestinyOnline()) {
-		window.location = "/destiny"
-		chrome.storage.sync.set({"--dgg--WaitForDestiny": false});
+		chrome.storage.sync.set({"--dgg--WaitForDestiny": false}, () => {
+			window.location = "/destiny";
+		});	
 	}
 }, timer);
 
