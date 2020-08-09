@@ -50,6 +50,7 @@ let cont_evt = setInterval(() => {
 		if(found){
 			addDGG(width);
 			addEvents();
+			setTwitchVideoFullScreen();
 			//if it is enabled, show dgg, otherwise default to twitch
 			if(enable) toggleDGG("dgg");
 			else toggleDGG("twitch");
@@ -215,6 +216,14 @@ function addDGG(width){
 		dom.parentNode.innerHTML += resizer + swapper + dgg;
 		//add the event handler DOM (takes up whole screen)
 	}
+}
+
+function setTwitchVideoFullScreen() {
+	const player = document.querySelector('.channel-root__player--with-chat');
+	const info = document.querySelector('.channel-root__info--with-chat');
+
+	if(player) player.classList.remove("channel-root__player--with-chat");
+	if(info) info.classList.remove("channel-root__info--with-chat");
 }
 
 function removeDGG(){
