@@ -50,13 +50,29 @@ let cont_evt = setInterval(() => {
 		if(found){
 			addDGG(width);
 			addEvents();
+			setTwitchVideoFullScreen();
 			//if it is enabled, show dgg, otherwise default to twitch
 			if(enable) toggleDGG("dgg");
 			else toggleDGG("twitch");
 			//runResizerAnimation();
+			addAutoDestinyLiveButton();
 		}
 	}
 }, 500);
+
+const switchToDestiny = (timer) => setInterval(() => {
+	if(location.pathname === "/destiny") clearInterval(this);
+	else if (isDestinyOnline()) {
+		chrome.storage.sync.set({"--dgg--WaitForDestiny": false}, () => {
+			window.location = "/destiny";
+		});	
+	}
+}, timer);
+
+const isDestinyOnline = () => {
+	const statusElementContent = document.querySelector('[href="/destiny"] .side-nav-card__live-status span')
+	return statusElementContent && statusElementContent.textContent.toLowerCase() !== "offline" 
+}
 
 //message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -200,6 +216,14 @@ function addDGG(width){
 		dom.parentNode.innerHTML += resizer + swapper + dgg;
 		//add the event handler DOM (takes up whole screen)
 	}
+}
+
+function setTwitchVideoFullScreen() {
+	const player = document.querySelector('.channel-root__player--with-chat');
+	const info = document.querySelector('.channel-root__info--with-chat');
+
+	if(player) player.classList.remove("channel-root__player--with-chat");
+	if(info) info.classList.remove("channel-root__info--with-chat");
 }
 
 function removeDGG(){
@@ -362,6 +386,38 @@ function trimName(arr, str){
 	}
 }
 
+function addAutoDestinyLiveButton() {
+	const destinyLiveButton = (() => {
+		const destinyLiveButtonHTML = '<div class="top-nav__prime tw-align-self-center tw-flex-grow-0 tw-flex-nowrap tw-flex-shrink-0 tw-mg-x-05"><div class="DestinyLive tw-relative"><button class=""><div style="width: 2rem; height: 2rem;"><?xml version="1.0" standalone="no"?><!DOCTYPE svg PUBLIC "-//W3C//DTD SVG 20010904//EN" "http://www.w3.org/TR/2001/REC-SVG-20010904/DTD/svg10.dtd"><svg id="destinyLiveLogo" version="1.0" xmlns="http://www.w3.org/2000/svg" width="100%" height="100%" viewBox="0 0 114.000000 114.000000" preserveAspectRatio="xMidYMid meet"><g transform="translate(0.000000,114.000000) scale(0.100000,-0.100000)" stroke="none"><path d="M0 570 l0 -570 570 0 570 0 0 570 0 570 -570 0 -570 0 0 -570z m1050 355 l0 -105 -64 0 -63 0 -94 96 c-52 52 -95 99 -97 105 -2 5 61 9 157 9 l161 0 0 -105z m-345 -12 l104 -108 0 -240 1 -240 -106 -112 -106 -113 -254 0 -254 0 0 460 0 460 256 0 255 0 104 -107z m345 -718 l0 -105 -166 0 -166 0 97 105 97 105 69 0 69 0 0 -105z"/><path d="M390 570 l0 -320 35 0 35 0 0 320 0 320 -35 0 -35 0 0 -320z"/></g></svg></div></button></div></div>';
+		const div = document.createElement('div');
+		div.innerHTML = destinyLiveButtonHTML.trim();
+		return div.firstChild;
+	})();
+
+	const navBar = document.querySelector('.top-nav__menu > div:last-child ');
+	navBar.insertBefore(destinyLiveButton, navBar.childNodes[0]);
+	chrome.storage.sync.get(["--dgg--WaitForDestiny"], (data) => {
+		const waitForDestiny = data["--dgg--WaitForDestiny"];
+		const fillColor = waitForDestiny ? "red" : "white";
+		destinyLiveButton.querySelector('svg').style.fill = fillColor;
+		if(waitForDestiny) destinyLiveButton.timeOutScript = switchToDestiny(500);
+	})
+
+	destinyLiveButton.onclick = () => {
+		chrome.storage.sync.get(["--dgg--WaitForDestiny"], (data) => {
+			const waitForDestiny = !data["--dgg--WaitForDestiny"];
+			const fillColor = waitForDestiny ? "red" : "white";
+			destinyLiveButton.querySelector('svg').style.fill = fillColor;
+
+			if(waitForDestiny) {
+				destinyLiveButton.timeOutScript = switchToDestiny(500);
+			} else {
+				clearInterval(destinyLiveButton.timeOutScript);
+			}
+			chrome.storage.sync.set({"--dgg--WaitForDestiny": waitForDestiny});
+		});
+	};
+}
 
 
 /* WORKING ON! IDK WHATS WRONG :)*/
