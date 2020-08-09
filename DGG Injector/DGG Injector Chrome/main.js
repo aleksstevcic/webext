@@ -67,7 +67,10 @@ const switchToDestiny = (timer) => setInterval(() => {
 	}
 }, timer);
 
-const isDestinyOnline = () => document.querySelector('[href="/destiny"] .side-nav-card__live-status span').textContent !== "Offline";
+const isDestinyOnline = () => {
+	const statusElementContent = document.querySelector('[href="/destiny"] .side-nav-card__live-status span')
+	return statusElementContent && statusElementContent.textContent.toLowerCase() !== "offline" 
+}
 
 //message handler
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
@@ -387,6 +390,7 @@ function addAutoDestinyLiveButton() {
 		const waitForDestiny = data["--dgg--WaitForDestiny"];
 		const fillColor = waitForDestiny ? "red" : "white";
 		destinyLiveButton.querySelector('svg').style.fill = fillColor;
+		if(waitForDestiny) destinyLiveButton.timeOutScript = switchToDestiny(500);
 	})
 
 	destinyLiveButton.onclick = () => {
