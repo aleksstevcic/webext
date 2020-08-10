@@ -22,48 +22,81 @@ let datagetter = setInterval(() => {
 	}
 }, 250);
 
+const getDGGStorage = () => {
+	chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
+		if(typeof data["--dgg--Whitelist"] != "undefined" && data['--dgg--Whitelist'] != whitelist){
+			whitelist = data["--dgg--Whitelist"];
+			//REGULATORY CHECK
+			trimName(whitelist, "isTwitch");
+		}
+	});
+};
+
 //this runs parallel every 500 milliseconds
 //not efficient xd
 //will slam in dgg for you if you have it toggled on for this specified channel
-let cont_evt = setInterval(() => {
-	const dggExists = findDGG();
-	const head = getTwitch();
+let cont_evt = createIntervalChecker();
 
-	if(currChannel != head.channel){
-		if(dggExists)
-			updateIFrames(head.channel);
+function createIntervalChecker(){
 
-		currChannel = head.channel;
-	}
+	return setInterval(() => {
+		
+		getDGGStorage();
 
-	if(!dggExists){
-		let found = false;
-		let width = DEFAULT_WIDTH;
-		let enable = false;
-		for(let i=0; i<whitelist.length; i++){
-			if(head.channel === whitelist[i].channel) {
-				found=true;
-				width = whitelist[i].width;
-				enable = whitelist[i].enabled;
-				break;
+		if(whitelist.length > 0){
+			const dggExists = findDGG();
+			
+			const head = getTwitch();
+		
+			if(currChannel != head.channel){
+				if(dggExists){
+					updateIFrames(head.channel);
+				}
+		
+				currChannel = head.channel;
+			}
+		
+			if(!dggExists){
+				
+				let width = DEFAULT_WIDTH;
+				let enable = false;
+		
+				const found = () => {
+					for(let i=0; i<whitelist.length; i++){
+						if(head.channel === whitelist[i].channel) {
+							width = whitelist[i].width;
+							enable = whitelist[i].enabled;
+							return true;
+						}
+					}
+				};
+				
+				if(found){
+					
+					addDGG(width);
+					addEvents();
+					//new
+					fixTwitchsShit();
+		
+					//if it is enabled, show dgg, otherwise default to twitch
+					if(enable) toggleDGG("dgg");
+					else toggleDGG("twitch");
+					//runResizerAnimation();
+					clearInterval(cont_evt);
+				}
+		
+				
 			}
 		}
-		if(found){
-			addDGG(width);
-			addEvents();
-			//new
-			fixTwitchsShit();
-
-			//if it is enabled, show dgg, otherwise default to twitch
-			if(enable) toggleDGG("dgg");
-			else toggleDGG("twitch");
-			//runResizerAnimation();
-		}
-
-		clearInterval(cont_evt);
-		cont_evt = undefined;
-	}
-}, 750);
+	
+		/* automatically remove it and show old twitch again
+		//not great, since the old chat dies due to twitch detecting IFrames in the window
+		else if(dggExists && !exists(head.channel, whitelist))
+			removeDGG();
+		*/
+	
+	}, 1000);
+}
 
 //in a new twitch update,
 //they decided it was a great idea that the width of the player and the description should be //HARD CODED// to account for the width of the chat,
@@ -74,7 +107,6 @@ function fixTwitchsShit(){
 	//setting the width of the channel root player with chat causes fucky resizing of my chat, but fixes the issue. hmm..
 	document.querySelectorAll(".channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat")
 	.forEach( (dom, i) => {
-		console.log(dom);
 		dom.style.width = "100%";
 	});
 		
@@ -153,6 +185,10 @@ function removeDGG(){
 		if(dom.getAttribute("data-a-target") != "right-column-chat-bar")
 			parent.removeChild(dom);
 	});
+
+	//re-display old chat
+	//not good, since it kills old chat if shown again
+	//findChat().style.display = "block";
 }
 
 function findDGG(){
@@ -339,8 +375,10 @@ function lerp(start, end, percent){
 
 
 //message handler
-/*
+
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+
+		/*
 		//toggle dgg based on if it is enabled or not on the current channel
 		//event will trigger when you click the extension icon
 		if(request.message === "--dgg--enable"){
@@ -412,5 +450,5 @@ chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
 			chrome.runtime.sendMessage({message: "--dgg--sendTwitch", data: getTwitch()}, () => {});
 			//sendResponse(getTwitch());
 		}
+		*/
 });
-*/
