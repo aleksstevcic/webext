@@ -4,7 +4,7 @@ const DEFAULT_WIDTH = "340px";
 
 //this interval gets the current whitelist and saves it locally
 let datagetter = setInterval(() => {
-	let head = getTwitch();
+	const head = getTwitch();
 
 	if(head.isTwitch){
 		chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
@@ -26,8 +26,8 @@ let datagetter = setInterval(() => {
 //not efficient xd
 //will slam in dgg for you if you have it toggled on for this specified channel
 let cont_evt = setInterval(() => {
-	let dggExists = findDGG();
-	let head = getTwitch();
+	const dggExists = findDGG();
+	const head = getTwitch();
 
 	if(currChannel != head.channel){
 		if(dggExists)
@@ -72,7 +72,8 @@ let cont_evt = setInterval(() => {
 function fixTwitchsShit(){
 	
 	//setting the width of the channel root player with chat causes fucky resizing of my chat, but fixes the issue. hmm..
-	document.querySelectorAll(".channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat").forEach( (dom, i) => {
+	document.querySelectorAll(".channel-root--hold-chat+.persistent-player, .channel-root--watch-chat+.persistent-player, .channel-root__info--with-chat .channel-info-content, .channel-root__player--with-chat")
+	.forEach( (dom, i) => {
 		console.log(dom);
 		dom.style.width = "100%";
 	});
@@ -80,7 +81,7 @@ function fixTwitchsShit(){
 }
 
 function updateIFrames(channel){
-	let oldchat = findChatIFrame();
+	const oldchat = findChatIFrame();
 
 	oldchat.setAttribute("src", "https://www.twitch.tv/popout/" + channel + "/chat");
 }
@@ -96,9 +97,9 @@ function isEnabled(){
 }
 
 function toggleDGG(which){
-	let swaptype = which ? which : null; 
-	let dgg = findDGGIFrame();
-	let chat = findChatIFrame();
+	const swaptype = which ? which : null; 
+	const dgg = findDGGIFrame();
+	const chat = findChatIFrame();
 
 	if(swaptype != null){
 		if(swaptype == "dgg"){
@@ -130,7 +131,7 @@ function toggleDGG(which){
 }
 
 function addDGG(width){
-	let dom = findChat();
+	const dom = findChat();
 	if(dom){
 		let dgg = "<div class='dggPepeLaugh' visible='true' style='display:block; height: 100% !important; width: "+width+";'><iframe class = 'boringChat' src='https://www.twitch.tv/popout/" + getTwitch().channel + "/chat' style = 'height: 100% !important; width: 100% !important; display: none;'></iframe><iframe class = 'funChat' src='https://www.destiny.gg/embed/chat' style='height: 100% !important; width: 100% !important; display: block;'></iframe></div>";
 
@@ -146,7 +147,7 @@ function addDGG(width){
 }
 
 function removeDGG(){
-	let parent = findChat().parentNode;
+	const parent = findChat().parentNode;
 
 	parent.childNodes.forEach((dom) => {
 		if(dom.getAttribute("data-a-target") != "right-column-chat-bar")
@@ -179,10 +180,10 @@ function findSwapper(){
 }
 
 function addEvents(){
-	let resizer = findResizer();
-	let dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
-	let swapper = findSwapper();
-	let lamechat = findChatIFrame().contentDocument ? findChatIFrame().contentDocument : findChatIFrame().contentWindow.document;
+	const resizer = findResizer();
+	const dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
+	const swapper = findSwapper();
+	const lamechat = findChatIFrame().contentDocument ? findChatIFrame().contentDocument : findChatIFrame().contentWindow.document;
 
 	//on mouse down, change the DOM's property of "md" (mousedown) to true
 	resizer.addEventListener("mousedown", e => {
@@ -231,9 +232,9 @@ function addEvents(){
 		//when the mouse moves, save the width
 		dom.addEventListener("mousemove", e => {
 			if(resizer.getAttribute("md") === "true"){
-				let dgg = findDGG();
-				let posx = e.clientX - findResizer().style.width/2;
-				let val = window.screen.width - posx;
+				const dgg = findDGG();
+				const posx = e.clientX - findResizer().style.width/2;
+				const val = window.screen.width - posx;
 
 				dgg.style.width = val + "px";
 			}
@@ -242,9 +243,9 @@ function addEvents(){
 
 	//button to swap DGG and normal chat
 	swapper.addEventListener("click", () => {
-		let enable = toggleDGG() === "dgg" ? true : false;
+		const enable = toggleDGG() === "dgg" ? true : false;
 
-		let head = getTwitch();
+		const head = getTwitch();
 
 		let found = false;
 		for(let i=0; i<whitelist.length; i++){
@@ -280,9 +281,9 @@ function addEvents(){
 
 function setWidthToStorage(w){
 	
-	let channel = getTwitch().channel;
+	const channel = getTwitch().channel;
 	
-	let width = w ? w : findDGG().style.width;
+	const width = w ? w : findDGG().style.width;
 
 	let found = false;
 

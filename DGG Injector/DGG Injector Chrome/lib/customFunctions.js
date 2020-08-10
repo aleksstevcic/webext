@@ -4,12 +4,18 @@ function removeFromList(name, list){
 		templist = whitelist;
 	else
 		templist = list;
+
 	for(let i=0; i<templist.length; i++){
 		if(templist[i].channel === name){
 			templist.splice(i, 1);
 			i-=1;
 		}
 	}
+
+	console.log(list);
+	console.log(templist);
+
+	return templist;
 }
 
 //had to make this function because i have no idea what the fuck is wrong with my code and it keeps adding isTwitch to random fucking entries
@@ -71,7 +77,7 @@ function exists(name, list){
 }
 
 function getTwitch(){
-	let isTwitch = document.querySelector("meta[property^='og:site_name']") ? (document.querySelector("meta[property^='og:site_name']").getAttribute("content") == "Twitch") : null;
+	const isTwitch = document.querySelector("meta[property^='og:site_name']") ? (document.querySelector("meta[property^='og:site_name']").getAttribute("content") == "Twitch") : null;
 	let channelName = null;
 	if(document.querySelector("meta[property^='og:url']")){
 		let htmlname = document.querySelector("meta[property^='og:url']").getAttribute("content").split("twitch.tv/")[1];

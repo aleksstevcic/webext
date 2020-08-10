@@ -1,4 +1,4 @@
-let whitelist;
+let whitelist = [];
 
 document.addEventListener("DOMContentLoaded", (event) => {
 	
@@ -11,6 +11,12 @@ document.addEventListener("DOMContentLoaded", (event) => {
 	main();
 
 });
+
+window.onbeforeunload = () =>{
+
+	pushToChromeStorage(whitelist);
+
+};
 
 function main(){
 
@@ -27,8 +33,8 @@ function main(){
 }
 
 function makeEditor(data){
-	let mainDiv = document.querySelector(".dispArea");
-	let tbody = document.querySelector(".dispArea tbody");
+	const mainDiv = document.querySelector(".dispArea");
+	const tbody = document.querySelector(".dispArea tbody");
 	for(let dataIndex = 0; dataIndex < data.length; dataIndex++){
 		tbody.appendChild(makeObj(data[dataIndex]));
 	}
@@ -36,46 +42,46 @@ function makeEditor(data){
 
 function makeObj(obj){
 	//MAIN BLOCK
-	let div = document.createElement("tr");
+	const div = document.createElement("tr");
 	div.setAttribute("identifier", obj.channel);
 	div.setAttribute("id", "row");
 	div.setAttribute("class", "disp");
 
 	//CHANNEL NAME
-	let ctd = document.createElement("td");
-	let channelBlock = document.createElement("textarea");
+	const ctd = document.createElement("td");
+	const channelBlock = document.createElement("textarea");
 	channelBlock.setAttribute("class", "channel");
 	channelBlock.setAttribute("placeholder", "channel name");
 	channelBlock.innerText = obj.channel;
 
 	//WIDTH BOX
-	let wtd = document.createElement("td");
-	let widthBlock = document.createElement("textarea");
+	const wtd = document.createElement("td");
+	const widthBlock = document.createElement("textarea");
 	widthBlock.setAttribute("class", "width");
 	widthBlock.setAttribute("placeholder", "width");
 	widthBlock.innerText = obj.width.substring(0, obj.width.length - 2);
 
 	//DGG OR TWITCH? BUTTON
-	let ttd = document.createElement("td");
-	let typeBlock = document.createElement("button");
+	const ttd = document.createElement("td");
+	const typeBlock = document.createElement("button");
 	typeBlock.setAttribute("class", "enabled");
 	typeBlock.innerText = (obj.enabled ? "dgg" : "twitch");
 
 	//DELETE BUTTON
-	let dtd = document.createElement("td");
-	let deleteBlock = document.createElement("button");
+	const dtd = document.createElement("td");
+	const deleteBlock = document.createElement("button");
 	deleteBlock.setAttribute("class", "delete");
 	deleteBlock.innerText = "Remove";
 
 
-	channelBlock.onkeyup = channelBlock.onblur = channelBlock.onchange =
-	widthBlock.onkeyup   = widthBlock.onblur   = widthBlock.onchange   = (e) => {
+	channelBlock.onblur = channelBlock.onchange =
+	widthBlock.onblur   = widthBlock.onchange   = (e) => {
 
-		let obj = makeEntry(e);
+		const obj = makeEntry(e);
 
 		//this will return false if there have been no changes, so as to not call chrome storage all the time
 
-		let a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
+		const a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
 		if(a){
 			whitelist = a;
@@ -91,7 +97,7 @@ function makeObj(obj){
 		//toggle
 		obj.enabled = !obj.enabled;
 
-		let a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
+		const a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
 		if(a){
 			whitelist = a;
@@ -101,13 +107,13 @@ function makeObj(obj){
 	};
 
 	deleteBlock.onclick = (e) => {
-		let obj = makeEntry(e);
-
+		const obj = makeEntry(e);
+		
 		//pass-by reference. whitelist is edited directly
 		removeFromList(obj.channel, whitelist);
 
 		pushToChromeStorage(whitelist);
-		let itm = getSrcElement(e);
+		const itm = getSrcElement(e);
 		
 		itm.parentNode.removeChild(itm);
 	};
@@ -143,10 +149,10 @@ function makeEntry(e){
 }
 
 function makeEvents(){
-	let search = document.querySelector(".search");
+	const search = document.querySelector(".search");
 	search.onkeyup = search.onblur = search.onchange = (e) => {
 		
-		let doms = document.querySelectorAll("#row");
+		const doms = document.querySelectorAll("#row");
 
 		if(e.srcElement.value.length === 0){
 			doms.forEach((item, i) => {
