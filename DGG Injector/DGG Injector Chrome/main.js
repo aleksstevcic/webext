@@ -49,9 +49,8 @@ function createIntervalChecker(){
 			const head = getTwitch();
 		
 			if(currChannel != head.channel){
-				if(dggExists){
+				if(dggExists)
 					updateIFrames(head.channel);
-				}
 		
 				currChannel = head.channel;
 			}
@@ -60,17 +59,19 @@ function createIntervalChecker(){
 				
 				let width = DEFAULT_WIDTH;
 				let enable = false;
-		
-				const found = () => {
-					for(let i=0; i<whitelist.length; i++){
-						if(head.channel === whitelist[i].channel) {
-							width = whitelist[i].width;
-							enable = whitelist[i].enabled;
-							return true;
-						}
-					}
-				};
 				
+				let found = false;
+
+				//check to see if this channel is part of the list
+				for(let i=0; i<whitelist.length; i++){
+					if(head.channel === whitelist[i].channel) {
+						width = whitelist[i].width;
+						enable = whitelist[i].enabled;
+						found = true;
+					}
+				}
+				
+				//if it is part of the list, then add all the stuff needed
 				if(found){
 					
 					addDGG(width);
@@ -217,9 +218,9 @@ function findSwapper(){
 
 function addEvents(){
 	const resizer = findResizer();
-	const dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
+	let dgg = findDGGIFrame().contentDocument ? findDGGIFrame().contentDocument : findDGGIFrame().contentWindow.document;
 	const swapper = findSwapper();
-	const lamechat = findChatIFrame().contentDocument ? findChatIFrame().contentDocument : findChatIFrame().contentWindow.document;
+	let lamechat = findChatIFrame().contentDocument ? findChatIFrame().contentDocument : findChatIFrame().contentWindow.document;
 
 	//on mouse down, change the DOM's property of "md" (mousedown) to true
 	resizer.addEventListener("mousedown", e => {
