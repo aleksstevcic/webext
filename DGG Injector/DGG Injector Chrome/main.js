@@ -22,73 +22,21 @@ let datagetter = setInterval(() => {
 	}
 }, 250);
 
-const getDGGStorage = () => {
-	chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-		if(typeof data["--dgg--Whitelist"] != "undefined" && data['--dgg--Whitelist'] != whitelist){
-			whitelist = data["--dgg--Whitelist"];
-			//REGULATORY CHECK
-			trimName(whitelist, "isTwitch");
-		}
-	});
-};
-
 //this runs parallel every 500 milliseconds
 //not efficient xd
 //will slam in dgg for you if you have it toggled on for this specified channel
 let cont_evt = createIntervalChecker();
 
 function createIntervalChecker(){
-
+	
 	return setInterval(() => {
 		
-		getDGGStorage();
-
-		if(whitelist.length > 0){
-			const dggExists = findDGG();
-			
-			const head = getTwitch();
-		
-			if(currChannel != head.channel){
-				if(dggExists)
-					updateIFrames(head.channel);
-		
-				currChannel = head.channel;
-			}
-		
-			if(!dggExists){
-				
-				let width = DEFAULT_WIDTH;
-				let enable = false;
-				
-				let found = false;
-
-				//check to see if this channel is part of the list
-				for(let i=0; i<whitelist.length; i++){
-					if(head.channel === whitelist[i].channel) {
-						width = whitelist[i].width;
-						enable = whitelist[i].enabled;
-						found = true;
-					}
-				}
-				
-				//if it is part of the list, then add all the stuff needed
-				if(found){
-					
-					addDGG(width);
-					addEvents();
-					//new
-					fixTwitchsShit();
-		
-					//if it is enabled, show dgg, otherwise default to twitch
-					if(enable) toggleDGG("dgg");
-					else toggleDGG("twitch");
-					//runResizerAnimation();
-					clearInterval(cont_evt);
-				}
-		
-				
-			}
-		}
+		//get the storage
+		getDGGStorage()
+		.then( (data) => {
+			whitelist = data;
+			checkAndAddDGGThenClearInterval();
+		});
 	
 		/* automatically remove it and show old twitch again
 		//not great, since the old chat dies due to twitch detecting IFrames in the window
@@ -97,6 +45,59 @@ function createIntervalChecker(){
 		*/
 	
 	}, 1000);
+}
+
+//this basically adds dgg into the page if it isnt already, and clears the interval that routinely runs this function if it added something
+function checkAndAddDGGThenClearInterval(){
+	
+	if(whitelist.length > 0){
+		const dggExists = findDGG();
+		
+		const head = getTwitch();
+
+		if(currChannel != head.channel){
+			if(dggExists)
+				updateIFrames(head.channel);
+
+			currChannel = head.channel;
+		}
+
+		if(!dggExists){
+			
+			let width = DEFAULT_WIDTH;
+			let enable = false;
+			
+			let found = false;
+
+			//check to see if this channel is part of the list
+			for(let i=0; i<whitelist.length; i++){
+				if(head.channel === whitelist[i].channel) {
+					width = whitelist[i].width;
+					enable = whitelist[i].enabled;
+					found = true;
+				}
+			}
+			
+			//if it is part of the list, then add all the stuff needed
+			if(found){
+				
+				addDGG(width);
+				addEvents();
+				//new
+				fixTwitchsShit();
+
+				//if it is enabled, show dgg, otherwise default to twitch
+				if(enable) toggleDGG("dgg");
+				else toggleDGG("twitch");
+				//runResizerAnimation();
+
+				clearInterval(cont_evt);
+				
+			}
+
+			
+		}
+	}
 }
 
 //in a new twitch update,
@@ -378,78 +379,35 @@ function lerp(start, end, percent){
 //message handler
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
+	console.log(request);
+	if(request.message === "--dgg--updateWhitelist"){
+		whitelist = request.whitelist;
+	}
 
-		/*
-		//toggle dgg based on if it is enabled or not on the current channel
-		//event will trigger when you click the extension icon
-		if(request.message === "--dgg--enable"){
-			
-			let dgg = findDGG();
-			let head = getTwitch();
-			if(!dgg){
-				//get the whitelist as stored on the profile
-				chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
-					
-					let head = getTwitch();
-					let dgg = findDGG();
+	else if(request.message === "--dgg--updatePage"){
 
-					//set our global whitelist
-					whitelist = data["--dgg--Whitelist"] === undefined ? [] : data["--dgg--Whitelist"];
+		const dgg = findDGG();
+		const head = getTwitch();
+		//if it exists,
+		if(request.data.channel === head.channel && dgg){
 
-					let obj = {
-						channel: head.channel,
-						width: dgg ? dgg.style.width : DEFAULT_WIDTH,
-						enabled: null
-					};
+			whitelist = request.whitelist;
+			//set width
+			dgg.style.width = request.data.width + "px";
+			//set the type of  chat correctly
+			toggleDGG((request.data.enabled ? "dgg" : "twitch"));
 
-					let found = false;
-					//go through the whitelist
-					for(let i=0; i<whitelist.length; i++){
-						//if we find a match
-						if(head.channel === whitelist[i].channel) {
-								whitelist.splice(i, 1);
-								found = true;
-								break;
-						}
-					}
-
-					//if we end up not finding anything, then immediately add it to the list
-					if(!found){
-						obj.enabled = true;
-						whitelist.push(obj);
-					}
-
-					//REGULATORY CHECK
-					trimName(whitelist, "isTwitch");
-
-					//set profile storage
-					chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
-						if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
-						else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
-					});
-					
-				});
-			}
-			
-			else{
-				removeFromWhitelist(head.channel);
-
-				//REGULATORY CHECK
-				trimName(whitelist, "isTwitch");
-
-				chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {
-					if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
-					else chrome.runtime.sendMessage({message: "--dgg--disableIcon"}, () => {});
-				});
-
-				//iframes fuck with everything in modern browsers. just reload page.
-				window.location.reload();
-			}
-			
+			//if i want to send a message to the promise, use this
+			//sendResponse({message: "toggled"});
 		}
-		else if(request.message === "--dgg--getTwitch"){
-			chrome.runtime.sendMessage({message: "--dgg--sendTwitch", data: getTwitch()}, () => {});
-			//sendResponse(getTwitch());
-		}
-		*/
+
+	}
+
+	//if you click add, update the whitelist in this content script, then add dgg
+	else if (request.message = "--dgg--addDGGChannel"){
+		console.log(whitelist);
+		whitelist = request.whitelist;
+		console.log(whitelist);
+		checkAndAddDGGThenClearInterval();
+	}
 });

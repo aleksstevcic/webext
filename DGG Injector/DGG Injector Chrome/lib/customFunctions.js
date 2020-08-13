@@ -61,6 +61,21 @@ function findAndReplace(name, obj, source){
 		return false;
 }
 
+function getDGGStorage(){
+	return new Promise((resolve, reject) => {
+		chrome.storage.sync.get(["--dgg--Whitelist"], (data) => {
+			if(typeof data["--dgg--Whitelist"] != "undefined" && data['--dgg--Whitelist'] != whitelist){
+				let wl = data["--dgg--Whitelist"];
+				//REGULATORY CHECK
+				trimName(wl, "isTwitch");
+				//nothing to resolve, maybe will do something later
+				resolve(wl);
+			}
+			else reject();
+		});
+	});
+}
+
 function pushToChromeStorage(obj){
 	chrome.storage.sync.set({"--dgg--Whitelist": obj}, () => {
 		//if(!found) chrome.runtime.sendMessage({message: "--dgg--enableIcon"}, () => {});
@@ -74,6 +89,25 @@ function exists(name, list){
 			return true;
 	}
 	return false;
+}
+
+function sendMessageToContentScript(msg){
+	//as a promise
+	return new Promise((resolve, reject) => {
+		chrome.tabs.query({active: true, currentWindow: true}, (tabs) => {
+			chrome.tabs.sendMessage(tabs[0].id, msg, (response) => {
+				resolve(response);
+			});
+		});
+	});
+}
+
+function sendMessageToBackgroundScript(msg){
+	return new Promise((resolve, reject) => {
+		chrome.runtime.sendMessage(msg, (response) => {
+			resolve(response);
+		});
+	});
 }
 
 function getTwitch(){

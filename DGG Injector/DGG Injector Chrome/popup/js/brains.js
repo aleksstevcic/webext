@@ -1,3 +1,4 @@
+//eventually make this private
 let whitelist = [];
 
 document.addEventListener("DOMContentLoaded", (event) => {
@@ -12,9 +13,11 @@ document.addEventListener("DOMContentLoaded", (event) => {
 
 });
 
+//when page closes, push and upate stuff
 window.onbeforeunload = () =>{
 
 	pushToChromeStorage(whitelist);
+	sendMessageToContentScript({message: "--dgg--updateWhitelist", whitelist: whitelist});
 
 };
 
@@ -56,10 +59,11 @@ function makeObj(obj){
 
 	//WIDTH BOX
 	const wtd = document.createElement("td");
-	const widthBlock = document.createElement("textarea");
+	const widthBlock = document.createElement("input");
 	widthBlock.setAttribute("class", "width");
 	widthBlock.setAttribute("placeholder", "width");
-	widthBlock.innerText = obj.width.substring(0, obj.width.length - 2);
+	widthBlock.setAttribute("type", "number");
+	widthBlock.value = obj.width.substring(0, obj.width.length - 2);
 
 	//DGG OR TWITCH? BUTTON
 	const ttd = document.createElement("td");
@@ -74,19 +78,23 @@ function makeObj(obj){
 	deleteBlock.innerText = "Remove";
 
 
-	channelBlock.onblur = channelBlock.onchange =
-	widthBlock.onblur   = widthBlock.onchange   = (e) => {
+	channelBlock.onblur = channelBlock.onchange = channelBlock.onkeydown =
+	widthBlock.onblur   = widthBlock.onchange   = widthBlock.onkeydown   = (e) => {
 
 		const obj = makeEntry(e);
+		
 
 		//this will return false if there have been no changes, so as to not call chrome storage all the time
 
-		const a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
+		const replacedList = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
-		if(a){
-			whitelist = a;
+		if(replacedList){
+			console.log(obj);
+			whitelist = replacedList;
 			pushToChromeStorage(whitelist);
 			getSrcElement(e).setAttribute("identifier",obj.channel);
+			
+			sendMessageToContentScript({message: "--dgg--updatePage", data: obj, whitelist: whitelist});
 		}
 		
 	};
@@ -97,13 +105,17 @@ function makeObj(obj){
 		//toggle
 		obj.enabled = !obj.enabled;
 
-		const a = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
+		const replacedList = findAndReplace(getSrcElement(e).getAttribute("identifier"), obj, whitelist);
 
-		if(a){
-			whitelist = a;
+		if(replacedList){
+			whitelist = replacedList;
 			pushToChromeStorage(whitelist);
 			getSrcElement(e).querySelector(".enabled").innerText = obj.enabled ? "dgg" : "twitch";
+
+
+			sendMessageToContentScript({message: "--dgg--updatePage", data: obj, whitelist: whitelist});
 		}
+
 	};
 
 	deleteBlock.onclick = (e) => {
@@ -116,6 +128,8 @@ function makeObj(obj){
 		const itm = getSrcElement(e);
 		
 		itm.parentNode.removeChild(itm);
+
+		sendMessageToContentScript({message: "--dgg--updateWhitelist", whitelist: whitelist});
 	};
 
 
@@ -196,6 +210,7 @@ function makeEvents(){
 						whitelist.push(obj);
 						makeObj(obj);
 						pushToChromeStorage(whitelist);
+						sendMessageToContentScript({message: "--dgg--addDGGChannel", whitelist: whitelist});
 						window.location.reload();
 					}
 
@@ -211,6 +226,7 @@ function makeEvents(){
 					whitelist.push(obj);
 					makeObj(obj);
 					pushToChromeStorage(whitelist);
+					sendMessageToContentScript({message: "--dgg--addDGGChannel", whitelist: whitelist});
 					window.location.reload();
 				}
 			}
