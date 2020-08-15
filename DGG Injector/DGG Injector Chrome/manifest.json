@@ -1,17 +1,17 @@
 {
 	"manifest_version": 2,
 	"name": "DGG Injector",
-	"version": "0.1",
+	"version": "0.2",
 	
 	"icons": {
 		"128": "icons/icon.png"
 	},
-	"description": "NOTE: must be reactivated each time and old twitch chat will fail to load until you refresh the page. PepeLaugh, my friends.",
-	"permissions": ["https://twitch.tv/*", "storage", "tabs", "contextMenus"],
+	"description": "Inserts destiny.gg/embed/chat into specified twitch channels. PepeLaugh on, my friends.",
+	"permissions": ["https://twitch.tv/*", "storage", "tabs"],
 	"browser_action": {
 		"default_icon": "icons/icon.png",
-		"default_popup": "popup/test.html",
-		"default_title": "test",
+		"default_popup": "popup/popup.html",
+		"default_title": "DGG Injector",
 		"persistent": true
 	},
 	"content_scripts": [
