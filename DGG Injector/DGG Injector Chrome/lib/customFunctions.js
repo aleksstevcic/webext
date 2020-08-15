@@ -18,6 +18,23 @@ function removeFromList(name, list){
 	return templist;
 }
 
+function isNumeric(val){
+	return (!isNaN(val) && isFinite(val));
+}
+
+function clearTextFromNumber(val){
+	const regex = /\d/g;
+
+	let output = "";
+
+	let match;
+	while((match = regex.exec(val)) !== null){
+		output += match[0];
+	}
+
+	return output != "" ? output : val;
+}
+
 //had to make this function because i have no idea what the fuck is wrong with my code and it keeps adding isTwitch to random fucking entries
 //is pass by reference, no need to return, it will do it all automatically
 function trimName(arr, str){

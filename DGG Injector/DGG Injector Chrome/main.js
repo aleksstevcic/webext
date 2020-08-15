@@ -13,7 +13,7 @@ let datagetter = setInterval(() => {
 				//REGULATORY CHECK
 				trimName(whitelist, "isTwitch");
 			}
-			chrome.runtime.sendMessage({message: "--dgg--sendData", enabled: isEnabled()}, () => {});
+			chrome.runtime.sendMessage({message: "--dgg--sendData", enabled: true}, () => {});
 		});
 
 
@@ -226,8 +226,13 @@ function addEvents(){
 	//on mouse down, change the DOM's property of "md" (mousedown) to true
 	resizer.addEventListener("mousedown", e => {
 		(resizer.getAttribute("md") === "true") ? null : resizer.setAttribute("md", "true");
-			findDGGIFrame().style.pointerEvents = "none";
-			findChatIFrame().style.pointerEvents = "none";
+
+		const dist = e.clientX - resizer.style.width - (screen.width - parseInt(findDGG().style.width));
+		
+		resizer.setAttribute("dist", dist);
+
+		findDGGIFrame().style.pointerEvents = "none";
+		findChatIFrame().style.pointerEvents = "none";
 	});
 	
 	//resets the width of the panel to default on double click
@@ -235,24 +240,6 @@ function addEvents(){
 		findDGG().style.width = DEFAULT_WIDTH;
 		setWidthToStorage(DEFAULT_WIDTH);
 	});
-	/* in progress
-	resizer.addEventListener("dblclick", e => {
-		
-		let box = document.createElement("textarea");
-		box.width = "50px";
-		box.height = "50px";
-		box.style.position = "absolute";
-		box.style.opacity = ".6";
-		box.style.top = e.clientY + "px";
-		box.style.left = e.clientX + "px";
-		box.addEventListener("enter", e => {
-			let value = this.value;
-			document.body.removeChild(this);
-			//push changes
-		});
-		document.body.appendChild(box);
-	});
-	*/
 
 	//apply an event on all elements in this made up array
 	//turns out i only need it on document.body, and i dont want to re-make this code to not use foreach. whatever.
@@ -264,14 +251,19 @@ function addEvents(){
 			findChatIFrame().style.pointerEvents = "auto";
 			(resizer.getAttribute("md") === "true") ? resizer.setAttribute("md", "false") : null;
 			
+			resizer.setAttribute("dist", "0");
+			console.log(resizer.getAttribute("dist"));
 			setWidthToStorage();
 		});
 
 		//when the mouse moves, save the width
 		dom.addEventListener("mousemove", e => {
 			if(resizer.getAttribute("md") === "true"){
+
 				const dgg = findDGG();
-				const posx = e.clientX - findResizer().style.width/2;
+
+				const posx = e.clientX - parseInt(resizer.getAttribute("dist"));
+
 				const val = window.screen.width - posx;
 
 				dgg.style.width = val + "px";
@@ -298,7 +290,8 @@ function addEvents(){
 		trimName(whitelist, "isTwitch");
 
 		if(found)
-			chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
+			pushToChromeStorage(whitelist);
+			//chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
 	});
 
 	//COSMETIC HOVER EVENTS (does nothing rn im too smoothbrain to figure it out)
@@ -332,14 +325,15 @@ function setWidthToStorage(w){
 			break;
 		}
 	}
-
+	
 	if(!found)
 		whitelist.push(obj);
 
 	//REGULATORY CHECK
 	trimName(whitelist, "isTwitch");
 
-	chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
+	pushToChromeStorage(whitelist);
+	//chrome.storage.sync.set({"--dgg--Whitelist": whitelist}, () => {});
 }
 
 
@@ -357,7 +351,7 @@ function runResizerAnimation(){
 		//the time is not reporting correctly, its weird?
 		let t = new Date();
 		let currTime = t.getMilliseconds();
-		console.log(currTime);
+		
 		if(currTime < 1500){
 			let radians = Math.PI*(currTime/180)*(360/1500);
 			resizer.style.opacity = Math.abs(Math.sin(radians));
@@ -379,35 +373,36 @@ function lerp(start, end, percent){
 //message handler
 
 chrome.runtime.onMessage.addListener((request, sender, sendResponse) => {
-	console.log(request);
+
 	if(request.message === "--dgg--updateWhitelist"){
 		whitelist = request.whitelist;
+		sendResponse();
 	}
 
 	else if(request.message === "--dgg--updatePage"){
-
 		const dgg = findDGG();
 		const head = getTwitch();
+			
 		//if it exists,
 		if(request.data.channel === head.channel && dgg){
-
+			
 			whitelist = request.whitelist;
+
 			//set width
-			dgg.style.width = request.data.width + "px";
+			dgg.style.width = request.data.width;
 			//set the type of  chat correctly
 			toggleDGG((request.data.enabled ? "dgg" : "twitch"));
 
 			//if i want to send a message to the promise, use this
-			//sendResponse({message: "toggled"});
+			sendResponse();
 		}
-
+		sendResponse();
 	}
 
 	//if you click add, update the whitelist in this content script, then add dgg
 	else if (request.message = "--dgg--addDGGChannel"){
-		console.log(whitelist);
 		whitelist = request.whitelist;
-		console.log(whitelist);
 		checkAndAddDGGThenClearInterval();
+		sendResponse();
 	}
 });
